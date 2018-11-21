@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">GymLog</string>
+    <string name="title_activity_search">SearchActivity</string>
+
+    <string name="err_first_name">Please enter first name</string>
+    <string name="err_last_name">Please enter last name</string>
+    <string name="err_phone">Please enter valid phone</string>
+
+
+    <string-array name="occupation_array">
+        <item>Self employed</item>
+        <item>Student</item>
+        <item>Employee</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="product_array">
+        <item>CrossFit</item>
+        <item>FunFit</item>
+        <item>External</item>
+        <item>Other</item>
+    </string-array>
+</resources>
