@@ -3,6 +3,7 @@ package com.example.android.gymlog;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import android.content.ContentProviderOperation;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -12,9 +13,12 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
@@ -23,10 +27,8 @@ import android.os.Bundle;
 import android.telephony.PhoneNumberFormattingTextWatcher;
 import android.text.Editable;
 import android.text.InputType;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -36,26 +38,26 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 import android.support.design.widget.TextInputLayout;
 
 import com.example.android.gymlog.data.ClientEntry;
 import com.example.android.gymlog.data.GymDatabase;
+import com.example.android.gymlog.utils.PhoneUtilities;
+import com.example.android.gymlog.utils.QrCodeUtilities;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 
 public class NewClientActivity extends AppCompatActivity {
 
     static final int REQUEST_TAKE_PHOTO = 1;
+    static final int MY_PERMISSIONS_REQUEST_WRITE_CONTACTS =2;
     public static final int REQUEST_CODE = 10;
     EditText mId, mFirstName,mLastName,mPhone, mDob;
     AutoCompleteTextView mOccupation;
@@ -67,7 +69,7 @@ public class NewClientActivity extends AppCompatActivity {
     Button mTakePic;
     Button mSubmit;
     DatePickerDialog.OnDateSetListener onDateSetListener;
-    Date dateOfBirth;
+    Date dateOfBirth=null;
     int isNew=-1;
 
 
@@ -103,16 +105,17 @@ public class NewClientActivity extends AppCompatActivity {
                                 @Override
                                 public void run() {
                                     setIsNewId(result);
-
-
                                 }
                             });
                         }
                     });
                 }catch(Exception e){
-                    Toast.makeText(NewClientActivity.this,"invalid Id Entry",Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
                 }
             }
+
+
+
         });
 
 
@@ -167,7 +170,7 @@ public class NewClientActivity extends AppCompatActivity {
                 try {
                     dateOfBirth = new SimpleDateFormat("dd/MM/yyyy").parse(sDate);
                 }catch(ParseException e){
-                    Log.d("belloxxx","date fail");
+                    Log.d("datepicker error","date fail");
                 }
             }
         };
@@ -175,11 +178,6 @@ public class NewClientActivity extends AppCompatActivity {
         mDob.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                Calendar cal=Calendar.getInstance();
-//                int year=cal.get(Calendar.YEAR);
-//                int month=cal.get(Calendar.MONTH);
-//                int day=cal.get(Calendar.DAY_OF_MONTH);
-
                 DatePickerDialog dialog=new DatePickerDialog(NewClientActivity.this,
                         android.R.style.Theme_Holo_Light_Dialog_MinWidth,
                         onDateSetListener,
@@ -218,6 +216,24 @@ public class NewClientActivity extends AppCompatActivity {
             }
         });
 
+        //check contacts permission
+        if (ContextCompat.checkSelfPermission(NewClientActivity.this,
+                Manifest.permission.WRITE_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(NewClientActivity.this,
+                    Manifest.permission.WRITE_CONTACTS)) {
+
+            } else {
+
+                ActivityCompat.requestPermissions(NewClientActivity.this,
+                        new String[]{Manifest.permission.READ_CONTACTS},
+                        MY_PERMISSIONS_REQUEST_WRITE_CONTACTS);
+
+            }
+        }
+
     }
 
     //to be evaluated jointly on submit
@@ -229,6 +245,8 @@ public class NewClientActivity extends AppCompatActivity {
 
         if(firstNameCorrect && lastNameCorrect && phoneCorrect && idCorrect){
             populateDb();
+            saveQrCode();
+            addContact();
 
             Intent i=new Intent(getApplicationContext(),SearchActivity.class);
             startActivity(i);
@@ -241,7 +259,7 @@ public class NewClientActivity extends AppCompatActivity {
         if (mFirstName.getText().toString().trim().isEmpty()){
             ilFirstName.setErrorEnabled(true);
             ilFirstName.setError(getString(R.string.err_first_name));
-            mFirstName.setError("Input required");
+            mFirstName.setError(getString(R.string.input_required));
             return false;
         }
         ilFirstName.setErrorEnabled(false);
@@ -251,34 +269,35 @@ public class NewClientActivity extends AppCompatActivity {
         if (mLastName.getText().toString().trim().isEmpty()){
             ilLastName.setErrorEnabled(true);
             ilLastName.setError(getString(R.string.err_last_name));
-            mLastName.setError("Input required");
+            mLastName.setError(getString(R.string.input_required));
             return false;
         }
         ilLastName.setErrorEnabled(false);
         return true;
     }
     private boolean checkPhoneNumber(){
-        String phoneText=mPhone.getText().toString().replace(" ","")
-                .replace("+","00").replace("-","");
-        if (phoneText.length()==0){
+        if (mPhone.getText().toString().length()==0){
             ilPhone.setErrorEnabled(false);
             return true;
         }
+        String phoneText= PhoneUtilities.depuratePhone(mPhone.getText().toString());
         try{
-            Integer.parseInt(phoneText);
-            if (phoneText.length()>=8){
+            String checkText=phoneText.replaceFirst("^0+(?!$)", "");
+            Long.parseLong(checkText);
+            if (checkText.length()>=11){
                 ilPhone.setErrorEnabled(false);
                 return true;
             }else{
                 ilPhone.setErrorEnabled(true);
                 ilPhone.setError(getString(R.string.err_phone));
-                mPhone.setError("valid phone required");
+                mPhone.setError(getString(R.string.valid_phone_required));
                 return false;
             }
         }catch(Exception e){
+            Toast.makeText(getApplicationContext(),phoneText,Toast.LENGTH_SHORT).show();
             ilPhone.setErrorEnabled(true);
             ilPhone.setError(getString(R.string.err_phone));
-            mPhone.setError("valid phone required");
+            mPhone.setError(getString(R.string.valid_phone_required));
             return  false;
         }
     }
@@ -293,48 +312,25 @@ public class NewClientActivity extends AppCompatActivity {
             Integer.parseInt(id);
         }catch(Exception e){
             ilId.setErrorEnabled(true);
-            ilId.setError("Id has to be numeric");
-            mId.setError("Id has to be numeric");
-            Toast.makeText(this,"Id needs to be numeric", Toast.LENGTH_LONG).show();
+            ilId.setError(getString(R.string.id_has_to_be_numeric));
+            mId.setError(getString(R.string.id_has_to_be_numeric));
+            //Toast.makeText(this,getString(R.string.id_has_to_be_numeric), Toast.LENGTH_LONG).show();
             return false;
         }
 
-
-//        try{
-//            final int parseId=Integer.parseInt(id);
-////            final CountDownLatch latch = new CountDownLatch(1);
-//            AppExecutors.getInstance().diskIO().execute(new Runnable() {
-//                @Override
-//                public void run() {
-//                    final int result=mDb.clientDao().isIdNew(parseId);
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            setIsNewId(result);
-////                            latch.countDown();
-//
-//                        }
-//                    });
-//                }
-//            });
-////            try {
-////                latch.await();
-////            } catch (InterruptedException e) {
-////                e.printStackTrace();
-////            }
-            if (isNew==1){
-                ilId.setErrorEnabled(false);
-                return  true;
-            }else if (isNew==0){
-                ilId.setErrorEnabled(true);
-                ilId.setError("Id has to be new");
-                mId.setError("Id needs to be new");
-                Toast.makeText(this,"Id needs to be new", Toast.LENGTH_LONG).show();
-                return false;
-            }else{
-                Toast.makeText(this,"click again see what happens", Toast.LENGTH_LONG).show();
-                return false;
-            }
+        if (isNew==1){
+            ilId.setErrorEnabled(false);
+            return  true;
+        }else if (isNew==0){
+            ilId.setErrorEnabled(true);
+            ilId.setError(getString(R.string.id_has_to_be_new));
+            mId.setError(getString(R.string.id_has_to_be_new));
+            //Toast.makeText(this,"Id needs to be new", Toast.LENGTH_LONG).show();
+            return false;
+        }else{
+            Toast.makeText(this, R.string.click_again, Toast.LENGTH_LONG).show();
+            return false;
+        }
 
 
     }
@@ -351,7 +347,7 @@ public class NewClientActivity extends AppCompatActivity {
             if (grantResults[0]==PackageManager.PERMISSION_GRANTED){
                 dispatchTakePictureIntent();
             }else{
-                Toast.makeText(this,"you need to grant permission for this to work",Toast.LENGTH_LONG).show();
+                Toast.makeText(this, R.string.camera_permission_request,Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -359,7 +355,9 @@ public class NewClientActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode==REQUEST_TAKE_PHOTO && resultCode==RESULT_OK){
-            setPic();
+            //setPic();
+            takePic();
+            setPicture();
         }
     }
 
@@ -374,9 +372,10 @@ public class NewClientActivity extends AppCompatActivity {
             String lastName=mLastName.getText().toString();
             String phone=mPhone.getText().toString();
             String occupation=mOccupation.getText().toString();
+            String photoDir=createImageFile().getAbsolutePath();
             Date date=new Date();
 
-            final ClientEntry clientEntry=new ClientEntry(id,firstName,lastName,dateOfBirth,gender,occupation,phone, mCurrentPhotoPath, null, date);
+            final ClientEntry clientEntry=new ClientEntry(id,firstName,lastName,dateOfBirth,gender,occupation,phone, photoDir, null, date);
             AppExecutors.getInstance().diskIO().execute(new Runnable() {
                 @Override
                 public void run() {
@@ -387,19 +386,42 @@ public class NewClientActivity extends AppCompatActivity {
     }
 
     //take a photo functionality
-    String mCurrentPhotoPath=null;
 
-    private File createImageFile() throws IOException {
+    private File createImageFile()  {
         // Create an image file name
         String idPart = mId.getText().toString();//new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "PHOTO_ID_" + idPart ;
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = new File(storageDir, imageFileName + ".jpg");
 
-        // Save a file: path for use with ACTION_VIEW intents
-        mCurrentPhotoPath = image.getAbsolutePath();
-        Log.d("bellox",  mCurrentPhotoPath);
         return image;
+    }
+    private File createQrCodeFile()  {
+        // Create an image file name
+        String idPart = mId.getText().toString();//new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "QR_CODE_" + idPart ;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File qrCode = new File(storageDir, imageFileName + ".jpg");
+        // Save a file: path for use with ACTION_VIEW intents
+        return qrCode;
+    }
+    private File createMediumFile()  {
+        // Create an image file name
+        String idPart = mId.getText().toString();//new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "MEDIUM_" + idPart ;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File medium = new File(storageDir, imageFileName + ".jpg");
+        // Save a file: path for use with ACTION_VIEW intents
+        return medium;
+    }
+    private File createThumbnailFile()  {
+        // Create an image file name
+        String idPart = mId.getText().toString();
+        String imageFileName = "THUMB_" + idPart ;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        //File image = new File(storageDir, imageFileName + ".jpg");
+        File thumbnail = new File(storageDir, imageFileName + ".jpg");
+        return thumbnail;
     }
 
 
@@ -409,12 +431,9 @@ public class NewClientActivity extends AppCompatActivity {
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             // Create the File where the photo should go
             File photoFile = null;
-            try {
+
                 photoFile = createImageFile();
-            } catch (IOException ex) {
-                // Error occurred while creating the File
-                Log.d("bello2",  "error creating picture");
-            }
+
             // Continue only if the File was successfully created
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(this,
@@ -432,26 +451,8 @@ public class NewClientActivity extends AppCompatActivity {
 
 
     //code to frame and display pic
-    private void setPic() {
-        // Get the dimensions of the View
-        int targetW = mPhoto.getWidth();
-        int targetH = mPhoto.getHeight();
-
-        // Get the dimensions of the bitmap
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-
-        // Decode the image file into a Bitmap sized to fill the View
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath,bmOptions);
+    private void takePic(){
+        Bitmap bitmap = BitmapFactory.decodeFile(createImageFile().getAbsolutePath());
         int width  = bitmap.getWidth();
         int height = bitmap.getHeight();
         int newWidth = (height > width) ? width : height;
@@ -461,9 +462,126 @@ public class NewClientActivity extends AppCompatActivity {
         int cropH = (height - width) / 2;
         cropH = (cropH < 0)? 0: cropH;
         Bitmap cropImg = Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight);
-        RoundedBitmapDrawable roundedBitmapDrawable=RoundedBitmapDrawableFactory.create(getResources(),cropImg);
-        roundedBitmapDrawable.setCircular(true);
-        mPhoto.setImageDrawable(roundedBitmapDrawable);
+        savePhotoThumbMed(cropImg);
+    }
+    private void setPicture(){
+        File medium=createMediumFile();
+        String clientMedium=medium.getAbsolutePath();
+        if (medium.exists()) {
+            Bitmap bitmap = BitmapFactory.decodeFile(clientMedium);
+            RoundedBitmapDrawable roundedBitmapDrawable=RoundedBitmapDrawableFactory.create(getResources(),bitmap);
+            roundedBitmapDrawable.setCircular(true);
+            mPhoto.setImageDrawable(roundedBitmapDrawable);
+        }else{
+            mPhoto.setImageResource(android.R.drawable.ic_menu_camera);
+        }
+
+    }
+
+
+
+    private void savePhotoThumbMed(final Bitmap bitmap) {
+        try {
+            File thumbFile = createThumbnailFile();
+            File mediumFile = createMediumFile();
+
+            if (thumbFile.exists()){
+                thumbFile.delete();
+            }
+            if (mediumFile.exists()){
+                mediumFile.delete();
+            }
+
+            FileOutputStream thumbOut = new FileOutputStream(thumbFile);
+            FileOutputStream mediumOut = new FileOutputStream(mediumFile);
+
+            Bitmap thumb = Bitmap.createScaledBitmap(bitmap, 96, 96, false);
+            Bitmap medium = Bitmap.createScaledBitmap(bitmap, 1000, 1000, false);
+            String qrText="{\"obj\":\"l\",\"ufid\":"+mId.getText().toString()+"}";
+            Bitmap qrCode= QrCodeUtilities.GenerateQrCode(getApplicationContext(),qrText);
+            thumb.compress(Bitmap.CompressFormat.JPEG, 100, thumbOut);
+            medium.compress(Bitmap.CompressFormat.JPEG, 100, mediumOut);
+
+            thumbOut.flush();
+            mediumOut.flush();
+
+            thumbOut.close();
+            mediumOut.close();
+            Log.d("ThumbMed saved", "Thumb and Medium ok");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            Log.d("ThumbMed saved", "Thumb Medium IOException");
+        }
+    }
+
+    private void saveQrCode(){
+
+        try {
+            File qrFile = createQrCodeFile();
+            if (qrFile.exists()){
+                qrFile.delete();
+            }
+            FileOutputStream qrOut = new FileOutputStream(qrFile);
+            String qrText="{\"obj\":\"l\",\"ufid\":"+mId.getText().toString()+"}";
+            Bitmap qrCode= QrCodeUtilities.GenerateQrCode(getApplicationContext(),qrText);
+            qrCode.compress(Bitmap.CompressFormat.JPEG, 100, qrOut);
+            qrOut.flush();
+            qrOut.close();
+            Log.d("QR saved", "QR ok");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            Log.d("QR saved", "QR IOException");
+        }
+    }
+
+    private void addContact()
+    {
+        String DisplayName=mFirstName.getText().toString()+" "+mLastName.getText().toString()+" ID: "+mId.getText().toString();
+        String MobileNumber=mPhone.getText().toString();
+        MobileNumber = MobileNumber.replace(" ", "");
+
+        ArrayList < ContentProviderOperation > ops = new ArrayList< ContentProviderOperation >();
+
+        ops.add(ContentProviderOperation.newInsert(
+                ContactsContract.RawContacts.CONTENT_URI)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                .build());
+
+        //------------------------------------------------------ Names
+            ops.add(ContentProviderOperation.newInsert(
+                    ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                    .withValue(ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                    .withValue(
+                            ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME,
+                            DisplayName).build());
+
+        //------------------------------------------------------ Mobile Number
+        if (MobileNumber != null && !MobileNumber.isEmpty()) {
+            MobileNumber=PhoneUtilities.depuratePhone(MobileNumber);
+            ops.add(ContentProviderOperation.
+                    newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                    .withValue(ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, MobileNumber)
+                    .withValue(ContactsContract.CommonDataKinds.Phone.TYPE,
+                            ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
+                    .build());
+        }
+
+
+
+        // Asking the Contact provider to create a new contact
+        try {
+            getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), R.string.error_saving_contacts, Toast.LENGTH_LONG).show();
+            Log.d("contacts fail","Exception: " + e.getMessage());
+        }
     }
 
 

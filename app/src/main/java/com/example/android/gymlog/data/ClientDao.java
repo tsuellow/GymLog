@@ -9,6 +9,7 @@ import android.arch.persistence.room.Query;
 import android.arch.persistence.room.Update;
 import android.support.annotation.Nullable;
 
+import java.util.Date;
 import java.util.List;
 
 @Dao
@@ -27,8 +28,33 @@ public interface ClientDao {
     @Query("SELECT * FROM client WHERE id=:id")
     LiveData<ClientEntry> getClientById(int id);
 
-    @Query("SELECT * FROM client WHERE firstName LIKE :namePart ORDER BY firstName")
+    @Query("SELECT * FROM client WHERE firstName LIKE :namePart " +
+            "OR lastName LIKE :namePart OR CAST(id as TEXT) LIKE :namePart ORDER BY firstName ASC")
     LiveData<List<ClientEntry>> getClientByName(String namePart);
+
+    @Query("SELECT * FROM client WHERE id>0 AND (firstName LIKE :namePart " +
+            "OR lastName LIKE :namePart OR CAST(id as TEXT) LIKE :namePart) ORDER BY firstName ASC")
+    LiveData<List<ClientEntry>> getRegularClientByName(String namePart);
+
+    @Query("SELECT * FROM client WHERE syncStatus!=1")
+    List<ClientEntry> getClientToBeSynced();
+
+    @Query("SELECT C.* FROM (SELECT clientId, MAX(paidUntil) AS paidUntil " +
+            "FROM payment WHERE isValid=1 AND clientId>0 GROUP BY clientId) AS P " +
+            "LEFT JOIN client AS C ON P.clientId=C.id WHERE paidUntil=:date ORDER BY C.firstName ASC")
+    LiveData<List<ClientEntry>> getPaymentDueClients(Date date);
+
+    @Query("SELECT C.id, C.firstName, C.lastName, C.photo, V.timestamp from " +
+            "(select * from (SELECT clientId, max(timestamp) AS timestamp FROM " +
+            "visit WHERE access='G' AND timestamp>:queryDate AND clientId>0 GROUP BY clientId) " +
+            "UNION " +
+            "SELECT clientId, timestamp FROM visit where timestamp>:queryDate AND clientId IN(-1,-2)) AS V " +
+            "LEFT JOIN client AS C ON V.clientId=C.id " +
+            "WHERE C.firstName LIKE :namePart " +
+            "OR C.lastName LIKE :namePart " +
+            "OR CAST(C.id as TEXT) LIKE :namePart " +
+            "ORDER BY timestamp DESC")
+    LiveData<List<ClientVisitJoin>> getCurrentClass(Date queryDate, String namePart);
 
     @Insert
     void insertClient(ClientEntry clientEntry);

@@ -4,20 +4,34 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.example.android.gymlog.data.ClientEntry;
+import com.example.android.gymlog.data.DateConverter;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
 import java.util.List;
 
 public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder> {
@@ -29,18 +43,20 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
     public class ViewHolder extends RecyclerView.ViewHolder{
         private TextView mFirstName;
         private TextView mLastName;
-        private TextView mPhone;
+        private TextView mIdSearch;
         private TextView mOptionsMenu;
         private ImageView mProfileImage;
+        private LinearLayout mBackground;
 
         public ViewHolder(View itemView){
             super(itemView);
 
             mFirstName= (TextView) itemView.findViewById(R.id.tv_first_name);
             mLastName= (TextView) itemView.findViewById(R.id.tv_last_name);
-            mPhone= (TextView) itemView.findViewById(R.id.tv_phone);
+            mIdSearch = (TextView) itemView.findViewById(R.id.tv_id_search);
             mOptionsMenu=(TextView) itemView.findViewById(R.id.tv_options_menu);
             mProfileImage=(ImageView) itemView.findViewById(R.id.iv_profile_image);
+            mBackground=(LinearLayout) itemView.findViewById(R.id.ly_background_search);
         }
     }
 
@@ -70,7 +86,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
         LayoutInflater inflater=LayoutInflater.from(mContext);
 
         //now inflate the view
-        View clientView=inflater.inflate(R.layout.client_search_view,viewGroup,false);
+        View clientView=inflater.inflate(R.layout.adapter_search_view,viewGroup,false);
 
         ViewHolder viewHolder=new ViewHolder(clientView);
         return viewHolder;
@@ -78,46 +94,28 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull final SearchAdapter.ViewHolder viewHolder, int i) {
-        ClientEntry client=mClients.get(i);
+        final ClientEntry client=mClients.get(i);
         final int clientId=client.getId();
 
         //now find the tvs in the viewholder and assign them the correct text
         viewHolder.mFirstName.setText(client.getFirstName());
         viewHolder.mLastName.setText(client.getLastName());
-        viewHolder.mPhone.setText(client.getPhone());
-        if (client.getPhoto()!=null && !client.getPhoto().isEmpty()) {
-            String mPath =client.getPhoto().trim();
-            int targetW = 96;
-            int targetH = 128;
+        viewHolder.mIdSearch.setText("ID: "+client.getId());
 
-            // Get the dimensions of the bitmap
-          BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-            bmOptions.inJustDecodeBounds = true;
-            BitmapFactory.decodeFile(mPath, bmOptions);
-            int photoW = bmOptions.outWidth;
-            int photoH = bmOptions.outHeight;
-
-            // Determine how much to scale down the image
-            int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-
-            // Decode the image file into a Bitmap sized to fill the View
-            bmOptions.inJustDecodeBounds = false;
-            bmOptions.inSampleSize = scaleFactor;
-//            bmOptions.inPurgeable = true;
-            Bitmap bitmap = BitmapFactory.decodeFile(mPath, bmOptions);
-            int width  = bitmap.getWidth();
-            int height = bitmap.getHeight();
-            int newWidth = (height > width) ? width : height;
-            int newHeight = (height > width)? height - ( height - width) : height;
-            int cropW = (width - height) / 2;
-            cropW = (cropW < 0)? 0: cropW;
-            int cropH = (height - width) / 2;
-            cropH = (cropH < 0)? 0: cropH;
-            Bitmap cropImg = Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight);
-            RoundedBitmapDrawable roundedBitmapDrawable=RoundedBitmapDrawableFactory.create(mContext.getResources(),cropImg);
+        String idPart = String.valueOf(client.getId());
+        String imageFileName = "THUMB_" + idPart ;
+        String medFileName = "MEDIUM_" + idPart ;
+        File storageDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        final File thumbnail = new File(storageDir, imageFileName + ".jpg");
+        final File medium = new File(storageDir, medFileName + ".jpg");
+        if (thumbnail.exists()) {
+            String thumb = thumbnail.getAbsolutePath();
+            Bitmap bitmap = BitmapFactory.decodeFile(thumb);
+            RoundedBitmapDrawable roundedBitmapDrawable = RoundedBitmapDrawableFactory.create(mContext.getResources(), bitmap);
             roundedBitmapDrawable.setCircular(true);
             viewHolder.mProfileImage.setImageDrawable(roundedBitmapDrawable);
-        }else{
+        }
+        else{
             viewHolder.mProfileImage.setImageResource(android.R.drawable.ic_menu_camera);
         }
 
@@ -151,6 +149,34 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
                     }
                 });
                 popup.show();
+            }
+        });
+        //test
+        viewHolder.mProfileImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                String clientMedium=medium.getAbsolutePath();
+                Bitmap bitmap = BitmapFactory.decodeFile(clientMedium);
+                ImageView image = new ImageView(mContext);
+                image.setImageBitmap(bitmap);
+
+                AlertDialog.Builder builder =
+                        new AlertDialog.Builder(mContext).
+                                setView(image);
+                AlertDialog alertDialog=builder.create();
+                alertDialog.show();
+                alertDialog.getWindow().setLayout(600, 600);
+            }
+        });
+
+        viewHolder.mBackground.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //Toast.makeText(mContext,"background clicked", Toast.LENGTH_SHORT).show();
+                Intent i = new Intent(mContext,ClientProfileActivity.class);
+                i.putExtra("CLIENT_ID",clientId);
+                mContext.startActivity(i);
             }
         });
 

@@ -1,22 +1,28 @@
 package com.example.android.gymlog;
 
+
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.support.v7.widget.SearchView;
-
+import android.widget.Toast;
 import com.example.android.gymlog.data.ClientEntry;
 import com.example.android.gymlog.data.GymDatabase;
+import com.example.android.gymlog.data.PaymentEntry;
+import com.example.android.gymlog.data.VisitEntry;
 
 import java.util.List;
 
@@ -30,6 +36,8 @@ public class SearchActivity extends AppCompatActivity {
     SearchView searchView;
     Toolbar mToolbar;
     String searchString;
+    SharedPreferences sharedPreferences;
+    static Context appContext;
 
 
 
@@ -44,10 +52,12 @@ public class SearchActivity extends AppCompatActivity {
         setSupportActionBar(mToolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        sharedPreferences=PreferenceManager.getDefaultSharedPreferences(this);
+
 
         mContext = getApplicationContext();
         rvClients = (RecyclerView) findViewById(R.id.rv_client_search);
-        mAdapter = new SearchAdapter(mContext);
+        mAdapter = new SearchAdapter(this);
         mDb = GymDatabase.getInstance(getApplicationContext());
 
         rvClients.setAdapter(mAdapter);
@@ -72,11 +82,12 @@ public class SearchActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
+        appContext=getApplicationContext();
 
+    }
 
-
-
-
+    public static Context getAppCont(){
+        return appContext;
     }
 
     private void populateDataSource(String s) {
@@ -87,7 +98,7 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onChanged(@Nullable List<ClientEntry> clientEntries) {
                 mAdapter.setClients(clientEntries);
-                mToolbar.setSubtitle(mAdapter.getItemCount()+" Clients");
+                mToolbar.setSubtitle(mAdapter.getItemCount()+" "+getString(R.string.clients));
 
             }
         });
@@ -100,7 +111,7 @@ public class SearchActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_search, menu);
+        getMenuInflater().inflate(R.menu.menu_search_plus, menu);
 
         searchView = (SearchView) menu.findItem(R.id.action_search)
                 .getActionView();
@@ -111,6 +122,61 @@ public class SearchActivity extends AppCompatActivity {
 
 
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.opt_setting:{
+                Intent intent=new Intent(getApplicationContext(),SettingsActivity.class);
+                startActivity(intent);
+                break;
+            }
+            case R.id.opt_reminder:{
+                //Toast.makeText(getApplicationContext(),"open reminder list",Toast.LENGTH_SHORT).show();
+                Intent intent=new Intent(getApplicationContext(),SendReminderActivity.class);
+                startActivity(intent);
+                break;
+            }
+
+            case R.id.opt_backup:{
+                Toast.makeText(getApplicationContext(), R.string.backup_in_process,Toast.LENGTH_SHORT).show();
+                final DataBackup dataBackup=new DataBackup(SearchActivity.this);
+                if (dataBackup.hasInternetConnectivity()){
+                    AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (dataBackup.hasHostAccess()){
+                                final List<ClientEntry> clients=mDb.clientDao().getClientToBeSynced();
+                                final List<PaymentEntry> payments=mDb.paymentDao().getPaymentToBeSynced();
+                                final List<VisitEntry> visits=mDb.visitDao().getVisitToBeSynced();
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        dataBackup.backupClientTable(clients,payments,visits);
+
+                                    }
+                                });
+                            }else{
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        dataBackup.showNegativeDialog();
+                                    }
+                                });
+                            }
+                        }
+                    });
+
+                }else {
+                    Toast.makeText(getApplicationContext(), R.string.no_internet,Toast.LENGTH_LONG).show();
+
+                }
+                break;
+            }
+
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private SearchView.OnQueryTextListener onQueryTextListener =
@@ -138,6 +204,10 @@ public class SearchActivity extends AppCompatActivity {
         // Always call the superclass so it can save the view hierarchy state
         super.onSaveInstanceState(savedInstanceState);
     }
+
+
+
+
 
 }
 

@@ -9,7 +9,7 @@ import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 import android.util.Log;
 
-@Database(entities = {ClientEntry.class, PaymentEntry.class, VisitEntry.class},version = 4)
+@Database(entities = {ClientEntry.class, PaymentEntry.class, VisitEntry.class},version = 7)
 @TypeConverters(DateConverter.class)
 public abstract class GymDatabase extends RoomDatabase {
 
@@ -22,11 +22,13 @@ public abstract class GymDatabase extends RoomDatabase {
     private static GymDatabase sInstance;
 
 
-/*    static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+/*    static final Migration MIGRATION_4_5 = new Migration(4, 5) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE visit "
-                    + " ADD COLUMN access TEXT");
+            database.execSQL("ALTER TABLE visit ADD COLUMN syncStatus INTEGER");
+            database.execSQL("ALTER TABLE client ADD COLUMN syncStatus INTEGER");
+            database.execSQL("ALTER TABLE payment ADD COLUMN isValid INTEGER");
+            database.execSQL("ALTER TABLE payment ADD COLUMN syncStatus INTEGER");
         }
     };*/
 
@@ -38,7 +40,7 @@ public abstract class GymDatabase extends RoomDatabase {
                         GymDatabase.class, GymDatabase.DB_NAME)
                         //.allowMainThreadQueries()
                         .fallbackToDestructiveMigration()
-                        //.addMigrations(MIGRATION_2_3)
+                        //.addMigrations(MIGRATION_4_5)
                         .build();
             }
         }

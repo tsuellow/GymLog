@@ -20,6 +20,7 @@ public class VisitEntry {
     private int clientId;
     private Date timestamp;
     private String access;
+    private int syncStatus=0;
 
     public VisitEntry(int clientId, Date timestamp, String access) {
         this.clientId = clientId;
@@ -57,5 +58,13 @@ public class VisitEntry {
 
     public void setAccess(String access) {
         this.access = access;
+    }
+
+    public int getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(int syncStatus) {
+        this.syncStatus = syncStatus;
     }
 }

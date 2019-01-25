@@ -10,6 +10,10 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="18" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:allowBackup="true"
@@ -19,9 +23,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity
             android:name=".MainActivity"
-            android:windowSoftInputMode="stateAlwaysHidden">
+            android:windowSoftInputMode="stateAlwaysHidden"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -29,12 +35,28 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".SendReminderActivity"
+            android:label="@string/send_reminder"
+            android:parentActivityName=".SearchActivity"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity
+            android:name=".CurrentClassActivity"
+            android:label="@string/current_class"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name=".SearchActivity"
             android:label="@string/title_activity_search"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
+            android:name=".ClientProfileActivity"
+            android:label="@string/client_profile"
+            android:parentActivityName=".SearchActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
             android:name=".NewClientActivity"
+            android:label="@string/new_client"
             android:parentActivityName=".SearchActivity" />
 
         <provider
@@ -49,18 +71,26 @@
 
         <activity
             android:name=".LoginScreen"
+            android:label="@string/login"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="stateAlwaysVisible" />
         <activity
             android:name=".PayClientActivity"
+            android:label="@string/new_payment"
             android:parentActivityName=".SearchActivity" />
         <activity
             android:name=".ModifyClientActivity"
+            android:label="@string/modify"
             android:parentActivityName=".SearchActivity" />
-        <activity android:name=".ClientsSearchActivity"
-            android:label="ClientSearch"
+        <activity
+            android:name=".ClientsSearchActivity"
+            android:label="@string/manual_search"
             android:parentActivityName=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar" ></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/settings"
+            android:parentActivityName=".SearchActivity" />
     </application>
 
 </manifest>

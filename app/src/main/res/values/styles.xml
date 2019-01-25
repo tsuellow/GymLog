@@ -7,6 +7,20 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+    </style>
+
+    <style name="PreferenceTheme" parent="@style/Theme.AppCompat">
+        <item name="preferenceTheme">@style/MyPreferenceThemeOverlay</item>
+    </style>
+
+    <style name="MyPreferenceThemeOverlay" parent="PreferenceThemeOverlay">
+        <item name="preferenceFragmentListStyle">@style/MyPreferenceFragmentListStyle</item>
+    </style>
+
+    <style name="MyPreferenceFragmentListStyle" parent="@style/PreferenceFragmentList">
+        <item name="android:paddingLeft">0dp</item>
+        <item name="android:paddingRight">0dp</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
@@ -24,7 +38,6 @@
         <item name="android:minHeight">0dp</item>
         <item name="android:maxLines">1</item>
     </style>
-
 
 
 </resources>

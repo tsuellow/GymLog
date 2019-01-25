@@ -1,23 +1,144 @@
 <resources>
     <string name="app_name">GymLog</string>
-    <string name="title_activity_search">SearchActivity</string>
+
 
     <string name="err_first_name">Please enter first name</string>
     <string name="err_last_name">Please enter last name</string>
     <string name="err_phone">Please enter valid phone</string>
 
+    <!--settings strings-->
+    <string name="spanish_key" translatable="false">spanish</string>
+    <string name="english_key" translatable="false">english</string>
+    <string name="spanish_label">Spanish</string>
+    <string name="english_label">English</string>
+
 
     <string-array name="occupation_array">
-        <item>Self employed</item>
-        <item>Student</item>
-        <item>Employee</item>
-        <item>Other</item>
+        <item>@string/self_employed</item>
+        <item>@string/employee</item>
+        <item>@string/student</item>
+        <item>@string/other</item>
     </string-array>
+    <string name="self_employed">Self employed</string>
+    <string name="employee">Employee</string>
+    <string name="student">Student</string>
+    <string name="other">Other</string>
 
     <string-array name="product_array">
-        <item>CrossFit</item>
-        <item>FunFit</item>
-        <item>External</item>
-        <item>Other</item>
+        <item>@string/crossfit</item>
+        <item>@string/funfit</item>
+        <item>@string/external</item>
+        <item>@string/other</item>
     </string-array>
+    <string name="crossfit">CrossFit</string>
+    <string name="funfit">FunFit</string>
+    <string name="external">External</string>
+
+    <!--main activity strings-->
+    <string name="title_activity_send_reminder" translatable="false">SendReminderActivity</string>
+    <string name="welcome">Welcome</string>
+    <string name="days_access_remaining">days of access remaining</string>
+    <string name="sorry">Sorry</string>
+    <string name="your_access_has_expired">it seems that your access to the gym has expired.</string>
+    <string name="please_pay_access">Please proceed to the counter to pay for access</string>
+    <string name="thanks_for_staying">Thanks for preferring us</string>
+    <string name="qr_code_scanner">QR code scanner</string>
+    <string name="focus_barcode">Focus barcode</string>
+    <string name="manual_search">Manual Search</string>
+    <string name="contact_us">Did you like this app? contact us at theo.suellow@gmail.com</string>
+    <string name="admin">Admin</string>
+    <string name="clients">clients</string>
+    <string name="close">close</string>
+    <!--manifest strings-->
+    <string name="send_reminder">Send reminder</string>
+    <string name="title_activity_search">Clients overview</string>
+    <string name="current_class">Current class</string>
+    <string name="client_profile">Client profile</string>
+    <string name="new_client">New client</string>
+    <string name="login">Login</string>
+    <string name="new_payment">New payment</string>
+    <string name="modify">Modify</string>
+    <string name="settings">Settings</string>
+    <!--current class strings-->
+    <string name="participants">participants</string>
+
+    <!--login strings-->
+    <string name="wrong_password">wrong password</string>
+    <string name="enter_pin">Enter PIN</string>
+    <!--backup search strings-->
+    <string name="backup_in_process">Backup in process, please wait!</string>
+    <string name="no_internet">No internet connectivity</string>
+    <string name="backup">Backup</string>
+    <string name="search">Search</string>
+    <string name="pay">Pay</string>
+    <string name="backup_finished">Backup finished!</string>
+    <string name="payments">payments</string>
+    <string name="visits">visits</string>
+    <string name="were_synced">records were successfully synced to the server</string>
+    <string name="ok">OK</string>
+    <string name="backup_failed">Backup failed!</string>
+    <string name="backup_failed_explained">No connection could be established with the server. Please try again. Ensure that you are connected to the same Wifi network as the server and that WAMP is currently running on your PC</string>
+
+    <!--new client and modify strings-->
+    <string name="invalid_entry">Invalid entry</string>
+    <string name="input_required">Input required</string>
+    <string name="valid_phone_required">valid phone required</string>
+    <string name="id_has_to_be_numeric">Id has to be numeric</string>
+    <string name="id_has_to_be_new">Id has to be new</string>
+    <string name="click_again">click again see what happens</string>
+    <string name="camera_permission_request">you need to grant camera permission for this to work</string>
+    <string name="error_saving_contacts">Exception: Error while saving to contacts</string>
+    <string name="id">id</string>
+    <string name="personal_data">Personal data</string>
+    <string name="first_name">first name</string>
+    <string name="last_name">last name</string>
+    <string name="occupation">occupation</string>
+    <string name="phone_number">phone number</string>
+    <string name="date_of_birth">date of birth</string>
+    <string name="gender">Gender</string>
+    <string name="take_photo">take photo</string>
+    <string name="submit">Submit</string>
+
+
+    <!--client profile-->
+    <string name="hi">Hi</string>
+    <string name="welcome_whatsapp_qr_code">, Welcome to Unity Fitness! From now on you can use this QR code to badge in with us. Your identifier is *ID:</string>
+    <string name="asterisc_to_bolden_whatsapp">*</string>
+    <string name="to">to:</string>
+    <string name="from">from:</string>
+    <string name="delete">Delete</string>
+    <string name="date">Date:</string>
+    <string name="message">Message:</string>
+    <string name="message_reminder_default_content">UF reminds you that your payment is expiring today. Don\'t miss out and renew your access to the gym.</string>
+    <string name="payments_due_on_this_date">Payments due on this date</string>
+    <string name="pin_change_success">PIN changed successfully</string>
+    <string name="error_pin_too_long">PIN must be 4 digits long</string>
+    <string name="error_pin_wrong">Wrong entries! either old or new PIN does not match.</string>
+    <string name="reset_pin_summay">Reset Admin access PIN</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="basic_settings">Basic Settings</string>
+    <string name="use_front_camera">Use front camera</string>
+    <string name="language">Language</string>
+    <string name="backup_setup">Backup Setup</string>
+    <string name="server_ip">Server IP</string>
+    <string name="old_pin">old PIN</string>
+    <string name="new_pin">new PIN</string>
+    <string name="cancel">Cancel</string>
+    <string name="none">None</string>
+    <string name="payment_information">Payment information</string>
+    <string name="product">product</string>
+    <string name="price_usd">price USD</string>
+    <string name="last_payment_on_record">last payment on record:</string>
+    <string name="input_has_to_be_numeric">Input has to be numeric</string>
+    <string name="never">Never</string>
+    <string name="attention">Attention!</string>
+    <string name="are_you_sure">Are you sure you want to delete the</string>
+    <string name="payment_from_period">payment for the period from</string>
+    <string name="until">until</string>
+    <string name="question_marc">\?</string>
+    <string name="yes">YES</string>
+    <string name="no">NO</string>
+    <string name="xxxx_replaceable">XXXX will be replaced with the first name of the client</string>
+
+
 </resources>

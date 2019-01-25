@@ -108,7 +108,7 @@ public class PayClientActivity extends AppCompatActivity {
                 try {
                     dateFrom = new SimpleDateFormat("dd/MM/yyyy").parse(sDate);
                 }catch(ParseException e){
-                    Log.d("belloxxx","date fail");
+                    Log.d("datePickerFail","date fail");
                 }
             }
         };
@@ -139,7 +139,7 @@ public class PayClientActivity extends AppCompatActivity {
                 try {
                     dateTo = new SimpleDateFormat("dd/MM/yyyy").parse(sDate);
                 }catch(ParseException e){
-                    Log.d("belloxxx","date fail");
+                    Log.d("datePickerFail","date fail");
                 }
             }
         };
@@ -192,7 +192,7 @@ public class PayClientActivity extends AppCompatActivity {
         if (mProduct.getText().toString().trim().isEmpty()){
             loProduct.setErrorEnabled(true);
             loProduct.setError(getString(R.string.err_first_name));
-            mProduct.setError("Input required");
+            mProduct.setError(getString(R.string.input_required));
             return false;
         }
         loProduct.setErrorEnabled(false);
@@ -202,7 +202,7 @@ public class PayClientActivity extends AppCompatActivity {
         if (mAmount.getText().toString().trim().isEmpty()){
             loAmount.setErrorEnabled(true);
             loAmount.setError(getString(R.string.err_first_name));
-            mAmount.setError("Input required");
+            mAmount.setError(getString(R.string.input_required));
             return false;
         }else{
             try{
@@ -212,7 +212,7 @@ public class PayClientActivity extends AppCompatActivity {
             }catch (Exception e){
                 loAmount.setErrorEnabled(true);
                 loAmount.setError(getString(R.string.err_first_name));
-                mAmount.setError("Input has to be numeric");
+                mAmount.setError(getString(R.string.input_has_to_be_numeric));
                 return false;
             }
         }
@@ -266,8 +266,8 @@ public class PayClientActivity extends AppCompatActivity {
                     }
 
                 }else{
-                    mLastProduct.setText("None");
-                    mDateLastPaid.setText("Never");
+                    mLastProduct.setText(getString(R.string.none));
+                    mDateLastPaid.setText(getString(R.string.never));
                     //mProduct.setText("CrossFit");
                     Calendar cal = Calendar.getInstance();
                     Date now=getDateWithoutTime();

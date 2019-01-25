@@ -26,7 +26,6 @@
                 <TextView
                     android:layout_width="120dp"
                     android:layout_height="match_parent"
-                    android:hint="id"
                     android:textStyle="bold"
                     android:textSize="20sp"
                     android:id="@+id/tv_id_mod"/>
@@ -37,7 +36,7 @@
             <TextView
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:text="Personal Data"
+                android:text="@string/personal_data"
                 android:textSize="28dp"
                 android:gravity="right"/>
 
@@ -54,7 +53,7 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="first name"
+                android:hint="@string/first_name"
                 android:id="@+id/ev_first_name_mod"
                 android:ems="10"
                 />
@@ -71,7 +70,7 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="last name"
+                android:hint="@string/last_name"
                 android:id="@+id/ev_last_name_mod"
                 android:ems="10"
                 />
@@ -88,7 +87,7 @@
             <AutoCompleteTextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="occupation"
+                android:hint="@string/occupation"
                 android:focusableInTouchMode="false"
                 android:id="@+id/actv_occupation_mod"
                 android:ems="10"
@@ -107,7 +106,7 @@
             <EditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="phone number"
+                android:hint="@string/phone_number"
                 android:id="@+id/ev_phone_mod"
                 android:ems="10"
                 android:inputType="phone"
@@ -128,13 +127,13 @@
                     android:id="@+id/lo_dob_mod"
                     android:layout_marginTop="10dp"
                     android:layout_gravity="center_horizontal"
-                    android:layout_width="140dp"
+                    android:layout_width="130dp"
                     android:layout_height="wrap_content">
 
                     <EditText
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="date of birth"
+                        android:hint="@string/date_of_birth"
                         android:focusableInTouchMode="false"
                         android:id="@+id/ev_dob_mod"
                         android:ems="10"
@@ -148,7 +147,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:id="@+id/tv_gender_mod"
-                    android:hint="Gender"
+                    android:hint="@string/gender"
                     android:textColor="?attr/editTextColor"
                     android:textAppearance="?android:attr/textAppearanceMediumInverse"
                     />
@@ -180,7 +179,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:id="@+id/bt_take_photo_mod"
-                    android:text="take photo"/>
+                    android:text="@string/take_photo"
+                    style="@style/Widget.AppCompat.Button.Borderless.Colored"/>
 
 
             </LinearLayout>
@@ -190,8 +190,8 @@
                 android:orientation="vertical">
 
                 <ImageView
-                    android:layout_width="180dp"
-                    android:layout_height="180dp"
+                    android:layout_width="190dp"
+                    android:layout_height="190dp"
                     android:layout_gravity="right"
                     android:id="@+id/iv_photo_mod"
                     android:src="@android:drawable/ic_menu_camera"
@@ -205,12 +205,11 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Submit"
+            android:text="@string/submit"
             android:textStyle="bold"
+            style="@style/Widget.AppCompat.Button.Borderless.Colored"
             android:layout_gravity="center_horizontal"
-            android:backgroundTint="#9c9c9c"
             android:id="@+id/bt_submit_mod"/>
-
 
     </LinearLayout>
 </ScrollView>

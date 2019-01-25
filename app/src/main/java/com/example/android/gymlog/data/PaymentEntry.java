@@ -23,6 +23,8 @@ public class PaymentEntry {
     private Date paidFrom;
     private Date paidUntil;
     private Date timestamp;
+    private int isValid=1;
+    private int syncStatus=0;
 
     public PaymentEntry(int clientId, String product, float amountUsd, Date paidFrom, Date paidUntil, Date timestamp) {
         this.clientId = clientId;
@@ -87,5 +89,21 @@ public class PaymentEntry {
 
     public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public int getIsValid() {
+        return isValid;
+    }
+
+    public void setIsValid(int isValid) {
+        this.isValid = isValid;
+    }
+
+    public int getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(int syncStatus) {
+        this.syncStatus = syncStatus;
     }
 }

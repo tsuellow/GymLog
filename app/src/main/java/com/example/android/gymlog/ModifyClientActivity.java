@@ -43,8 +43,10 @@ import android.support.design.widget.TextInputLayout;
 import com.example.android.gymlog.data.ClientEntry;
 import com.example.android.gymlog.data.GymDatabase;
 import com.example.android.gymlog.data.PaymentEntry;
+import com.example.android.gymlog.utils.PhoneUtilities;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -69,7 +71,8 @@ public class ModifyClientActivity extends AppCompatActivity {
     DatePickerDialog.OnDateSetListener onDateSetListener;
 
     Date dateOfBirth;
-    String mCurrentPhotoPath;
+
+    int currentSyncStatus;
 
     int clientId;
 
@@ -154,7 +157,7 @@ public class ModifyClientActivity extends AppCompatActivity {
                 try {
                     dateOfBirth = new SimpleDateFormat("dd/MM/yyyy").parse(sDate);
                 }catch(ParseException e){
-                    Log.d("belloxxx","date fail");
+                    Log.d("date picker fail","date fail");
                 }
             }
         };
@@ -224,7 +227,7 @@ public class ModifyClientActivity extends AppCompatActivity {
         if (mFirstName.getText().toString().trim().isEmpty()){
             ilFirstName.setErrorEnabled(true);
             ilFirstName.setError(getString(R.string.err_first_name));
-            mFirstName.setError("Input required");
+            mFirstName.setError(getString(R.string.input_required));
             return false;
         }
         ilFirstName.setErrorEnabled(false);
@@ -234,83 +237,37 @@ public class ModifyClientActivity extends AppCompatActivity {
         if (mLastName.getText().toString().trim().isEmpty()){
             ilLastName.setErrorEnabled(true);
             ilLastName.setError(getString(R.string.err_last_name));
-            mLastName.setError("Input required");
+            mLastName.setError(getString(R.string.input_required));
             return false;
         }
         ilLastName.setErrorEnabled(false);
         return true;
     }
     private boolean checkPhoneNumber(){
-        String phoneText=mPhone.getText().toString().replace(" ","")
-                .replace("+","00").replace("-","");
-        if (phoneText.length()==0){
+        String phoneText= PhoneUtilities.depuratePhone(mPhone.getText().toString());
+        if (mPhone.getText().toString().length()==0){
             ilPhone.setErrorEnabled(false);
             return true;
         }
         try{
-            Integer.parseInt(phoneText);
+            String checkText=phoneText.replaceFirst("^0+(?!$)", "");
+            Long.parseLong(checkText);
             if (phoneText.length()>=8){
                 ilPhone.setErrorEnabled(false);
                 return true;
             }else{
                 ilPhone.setErrorEnabled(true);
                 ilPhone.setError(getString(R.string.err_phone));
-                mPhone.setError("valid phone required");
+                mPhone.setError(getString(R.string.valid_phone_required));
                 return false;
             }
         }catch(Exception e){
             ilPhone.setErrorEnabled(true);
             ilPhone.setError(getString(R.string.err_phone));
-            mPhone.setError("valid phone required");
+            mPhone.setError(getString(R.string.valid_phone_required));
             return  false;
         }
     }
-
-    /*//check id validity with two different error messages
-    int isNew;
-    void setIsNewId(int result){
-        isNew=result;
-    }
-    private boolean checkId(){
-        String id=mId.getText().toString().trim();
-
-
-        try{
-            final int parseId=Integer.parseInt(id);
-
-            AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                @Override
-                public void run() {
-                    final int result=mDb.clientDao().isIdNew(parseId);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            setIsNewId(result);
-                        }
-                    });
-                }
-            });
-
-        }catch(Exception e){
-            ilId.setErrorEnabled(true);
-            ilId.setError("Id has to be numeric");
-            mId.setError("Id has to be numeric");
-            Toast.makeText(this,"Id needs to be numeric", Toast.LENGTH_LONG).show();
-            return false;
-        }
-        if (isNew==1 && !id.isEmpty()){
-            ilId.setErrorEnabled(false);
-            return  true;
-        }else{
-            ilId.setErrorEnabled(true);
-            ilId.setError("Id has to be new");
-            mId.setError("Id needs to be new");
-            Toast.makeText(this,"Id needs to be new", Toast.LENGTH_LONG).show();
-            return false;
-        }
-    }*/
-
-
 
 
 
@@ -321,7 +278,7 @@ public class ModifyClientActivity extends AppCompatActivity {
             if (grantResults[0]==PackageManager.PERMISSION_GRANTED){
                 dispatchTakePictureIntent();
             }else{
-                Toast.makeText(this,"you need to grant permission for this to work",Toast.LENGTH_LONG).show();
+                Toast.makeText(this,getString(R.string.camera_permission_request),Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -329,7 +286,9 @@ public class ModifyClientActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         if (requestCode==REQUEST_TAKE_PHOTO && resultCode==RESULT_OK){
-            setPic();
+            //setPic();
+            takePic();
+            setPicture();
         }
     }
 
@@ -345,13 +304,17 @@ public class ModifyClientActivity extends AppCompatActivity {
         String lastName=mLastName.getText().toString();
         String phone=mPhone.getText().toString();
         String occupation=mOccupation.getText().toString();
+        String photoDir=createImageFile().getAbsolutePath();
         Date date=new Date();
 
-        final ClientEntry clientEntry=new ClientEntry(clientId,firstName,lastName,dateOfBirth,gender,occupation,phone, mCurrentPhotoPath, null, date);
+        final ClientEntry client=new ClientEntry(clientId,firstName,lastName,dateOfBirth,gender,occupation,phone, photoDir, null, date);
+        if (currentSyncStatus==1){
+            client.setSyncStatus(2);
+        }
         AppExecutors.getInstance().diskIO().execute(new Runnable() {
             @Override
             public void run() {
-                mDb.clientDao().updateClient(clientEntry);
+                mDb.clientDao().updateClient(client);
             }
         });
 
@@ -364,17 +327,31 @@ public class ModifyClientActivity extends AppCompatActivity {
     //take a photo functionality
 
 
-    private File createImageFile() throws IOException {
+    private File createImageFile()  {
         // Create an image file name
-        String idPart = mId.getText().toString();//new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String idPart = String.valueOf(clientId);//new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "PHOTO_ID_" + idPart ;
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = new File(storageDir, imageFileName + ".jpg");
-
-        // Save a file: path for use with ACTION_VIEW intents
-        mCurrentPhotoPath = image.getAbsolutePath();
-        Log.d("bellox",  mCurrentPhotoPath);
         return image;
+    }
+    private File createMediumFile() {
+        // Create an image file name
+        String idPart = String.valueOf(clientId);//new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "MEDIUM_" + idPart ;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File medium = new File(storageDir, imageFileName + ".jpg");
+        // Save a file: path for use with ACTION_VIEW intents
+        return medium;
+    }
+    private File createThumbnailFile() {
+        // Create an image file name
+        String idPart = String.valueOf(clientId);
+        String imageFileName = "THUMB_" + idPart ;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        //File image = new File(storageDir, imageFileName + ".jpg");
+        File thumbnail = new File(storageDir, imageFileName + ".jpg");
+        return thumbnail;
     }
 
 
@@ -384,12 +361,9 @@ public class ModifyClientActivity extends AppCompatActivity {
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             // Create the File where the photo should go
             File photoFile = null;
-            try {
+
                 photoFile = createImageFile();
-            } catch (IOException ex) {
-                // Error occurred while creating the File
-                Log.d("bello2",  "error creating picture");
-            }
+
             // Continue only if the File was successfully created
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(this,
@@ -397,7 +371,7 @@ public class ModifyClientActivity extends AppCompatActivity {
                         photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
-                Log.d("bello",  photoURI.toString());
+                Log.d("take photo",  photoURI.toString());
 
             }
 
@@ -407,26 +381,8 @@ public class ModifyClientActivity extends AppCompatActivity {
 
 
     //code to frame and display pic
-    private void setPic() {
-        // Get the dimensions of the View
-        int targetW = mPhoto.getWidth();
-        int targetH = mPhoto.getHeight();
-
-        // Get the dimensions of the bitmap
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-
-        // Decode the image file into a Bitmap sized to fill the View
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath,bmOptions);
+    private void takePic(){
+        Bitmap bitmap = BitmapFactory.decodeFile(createImageFile().getAbsolutePath());
         int width  = bitmap.getWidth();
         int height = bitmap.getHeight();
         int newWidth = (height > width) ? width : height;
@@ -436,10 +392,22 @@ public class ModifyClientActivity extends AppCompatActivity {
         int cropH = (height - width) / 2;
         cropH = (cropH < 0)? 0: cropH;
         Bitmap cropImg = Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight);
-        RoundedBitmapDrawable roundedBitmapDrawable=RoundedBitmapDrawableFactory.create(getResources(),cropImg);
-        roundedBitmapDrawable.setCircular(true);
-        mPhoto.setImageDrawable(roundedBitmapDrawable);
+        savePhotoThumbMed(cropImg);
     }
+    private void setPicture(){
+        File medium=createMediumFile();
+        String clientMedium=medium.getAbsolutePath();
+        if (medium.exists()) {
+            Bitmap bitmap = BitmapFactory.decodeFile(clientMedium);
+            RoundedBitmapDrawable roundedBitmapDrawable=RoundedBitmapDrawableFactory.create(getResources(),bitmap);
+            roundedBitmapDrawable.setCircular(true);
+            mPhoto.setImageDrawable(roundedBitmapDrawable);
+        }else{
+            mPhoto.setImageResource(android.R.drawable.ic_menu_camera);
+        }
+
+    }
+
 
 
     //method to get payment and profile data related to the client
@@ -469,10 +437,13 @@ public class ModifyClientActivity extends AppCompatActivity {
                     mFemaleRb.setChecked(true);
                 }
                 //set pick
-                mCurrentPhotoPath=clientEntry.getPhoto();
-                if (mCurrentPhotoPath!=null) {
-                    setPic();
-                }
+//                mCurrentPhotoPath=clientEntry.getPhoto();
+//                if (mCurrentPhotoPath!=null) {
+//                    setPic();
+//                }
+                setPicture();
+
+                currentSyncStatus=clientEntry.getSyncStatus();
             }
         });
 
@@ -484,6 +455,33 @@ public class ModifyClientActivity extends AppCompatActivity {
         int day = cal.get(Calendar.DAY_OF_MONTH);
         month = 1 + month;
         return day + "/" + month + "/" + year;
+    }
+
+    private void savePhotoThumbMed(final Bitmap bitmap) {
+        try {
+            File thumbFile = createThumbnailFile();
+            File mediumFile = createMediumFile();
+            if (thumbFile.exists()){
+                thumbFile.delete();
+            }
+            if (mediumFile.exists()){
+                mediumFile.delete();
+            }
+            FileOutputStream thumbOut = new FileOutputStream(thumbFile);
+            FileOutputStream mediumOut = new FileOutputStream(mediumFile);
+            Bitmap thumb = Bitmap.createScaledBitmap(bitmap, 96, 96, false);
+            Bitmap medium = Bitmap.createScaledBitmap(bitmap, 1000, 1000, false);
+            thumb.compress(Bitmap.CompressFormat.JPEG, 100, thumbOut);
+            medium.compress(Bitmap.CompressFormat.JPEG, 100, mediumOut);
+            thumbOut.flush();
+            mediumOut.flush();
+            thumbOut.close();
+            mediumOut.close();
+            Log.d("ThumbMed saved", "Thumb and Medium ok");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            Log.d("ThumbMed saved", "Thumb Medium IOException");
+        }
     }
 
 

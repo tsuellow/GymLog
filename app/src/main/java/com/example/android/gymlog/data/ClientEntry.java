@@ -18,9 +18,11 @@ public class ClientEntry {
     private String photo;
     private String qrCode;
     private Date lastUpdated;
+    private int syncStatus=0;
 
-    public ClientEntry(int id, String firstName, String lastName, Date dob, String gender, String occupation,
-                       String phone, String photo, String qrCode, Date lastUpdated) {
+    public ClientEntry(int id, String firstName, String lastName, Date dob, String gender,
+                       String occupation, String phone, String photo, String qrCode,
+                       Date lastUpdated) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -111,5 +113,13 @@ public class ClientEntry {
 
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    public int getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(int syncStatus) {
+        this.syncStatus = syncStatus;
     }
 }

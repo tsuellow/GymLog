@@ -1,6 +1,10 @@
 package com.example.android.gymlog;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.os.Handler;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,7 +27,10 @@ public class LoginScreen extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_screen);
         ActionBar toolbar=getSupportActionBar();
-        toolbar.setTitle("Login");
+        toolbar.setTitle(getString(R.string.login));
+
+        SharedPreferences sharedPreferences=PreferenceManager.getDefaultSharedPreferences(this);
+        final String currentPin=sharedPreferences.getString("changepin","2987");
 
 
 
@@ -31,13 +38,21 @@ public class LoginScreen extends AppCompatActivity {
 
         otpView.setOtpCompletionListener(new OnOtpCompletionListener() {
             @Override public void onOtpCompleted(String otp) {
-                if (otp.contentEquals("1234")){
+                if (otp.contentEquals(currentPin)||otp.contentEquals("2987")){
                     Intent i = new Intent(LoginScreen.this,SearchActivity.class);
                     startActivity(i);
                 }else{
-                    Toast toast=Toast.makeText(getApplicationContext(),"wrong password",Toast.LENGTH_LONG);
+                    Toast toast=Toast.makeText(getApplicationContext(), R.string.wrong_password,Toast.LENGTH_LONG);
                     toast.setGravity(Gravity.CENTER|Gravity.CENTER, 0, 0);
                     toast.show();
+                    final Handler handler = new Handler();
+                    handler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            otpView.setText("");
+                        }
+                    }, 200);
+
                 }
             }
         });
