@@ -1,6 +1,8 @@
 package com.example.android.gymlog;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.Observer;
 import android.content.Context;
@@ -11,6 +13,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -20,6 +23,7 @@ import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -53,21 +57,18 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity{
 
-    public static final String EXTRA_MANUAL_CLIENT_ID="ExtraManualClientId";
+    public static final String GYM_ID="uf";
+    public static final String CHANNEL_ID="111";
     private Button mManualSearch;
     private Context mContext;
-    private int manualClientId=0;
     private GymDatabase mDb;
-    private CaptureManager capture;
     private DecoratedBarcodeView barcodeScannerView;
     private String lastText;
     private ClientEntry mClientData;
     private PaymentEntry mPaymentData;
     private Toolbar mToolbar;
 
-
-
-
+    SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +81,7 @@ public class MainActivity extends AppCompatActivity{
         setSupportActionBar(mToolbar);
 
         //define which camera to use
-        SharedPreferences sharedPreferences= PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences= PreferenceManager.getDefaultSharedPreferences(this);
         boolean frontCamera=sharedPreferences.getBoolean("camera",true);
 
         CameraSettings cameraSettings = new CameraSettings();
@@ -109,13 +110,23 @@ public class MainActivity extends AppCompatActivity{
         barcodeScannerView.decodeContinuous(callback);
 
         //manual search button
+        final boolean secureManualSearch=sharedPreferences.getBoolean("manualsearch",false);
         mManualSearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i=new Intent(getApplicationContext(),ClientsSearchActivity.class);
-                startActivity(i);
+                if (!secureManualSearch) {
+                    Intent i = new Intent(getApplicationContext(), ClientsSearchActivity.class);
+                    startActivity(i);
+                }else{
+                    Intent i = new Intent(getApplicationContext(), LoginScreen.class);
+                    i.putExtra("goal","manual_search");
+                    startActivity(i);
+                }
             }
         });
+
+        createNotificationChannel();
+
 
     }
 
@@ -135,8 +146,8 @@ public class MainActivity extends AppCompatActivity{
             try {
                 //decode JSON
                 JSONObject jObj = new JSONObject(lastText);
-                int ufId = jObj.getInt("ufid");
-                retrieveClientData(ufId);
+                int jsonId = jObj.getInt(GYM_ID+"id");
+                retrieveClientData(jsonId);
             }catch(JSONException e){
                 Toast.makeText(getApplicationContext(), lastText, Toast.LENGTH_LONG).show();
             }
@@ -175,6 +186,7 @@ public class MainActivity extends AppCompatActivity{
         switch (item.getItemId()){
             case R.id.opt_admin:{
                 Intent login =new Intent(getApplicationContext(),LoginScreen.class);
+                login.putExtra("goal","admin");
                 startActivity(login);
                 break;
             }
@@ -234,7 +246,9 @@ public class MainActivity extends AppCompatActivity{
             String access="G";
 
             if (mClientData==null){
-                Toast.makeText(getApplicationContext(),"This QR code has not been assigned",Toast.LENGTH_LONG).show();
+                Toast toast=Toast.makeText(getApplicationContext(), R.string.unassigned_qr_code,Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER|Gravity.CENTER, 0, 0);
+                toast.show();
                 forgetLastQR.postDelayed(run, 5000);
             }else {
 
@@ -251,6 +265,45 @@ public class MainActivity extends AppCompatActivity{
                     }
                 });
 
+                //logic to add payment when visitor enters gym
+                if (mClientData.getId()<0) {
+                    int singleVisitId = mClientData.getId();
+                    String singlePaymentStr1 = sharedPreferences.getString("passminus1", "0");
+                    String singlePaymentStr2 = sharedPreferences.getString("passminus2", "0");
+                    String exchangeRateStr = sharedPreferences.getString("usd2cs", "1");
+
+                    if (singleVisitId == -1) {
+                        try {
+                            float singlePayment1 = Float.valueOf(singlePaymentStr1);
+                            float exchangeRate = Float.valueOf(exchangeRateStr);
+                            final PaymentEntry singlePassPay = new PaymentEntry(singleVisitId, getString(R.string.single_day_pass), singlePayment1/exchangeRate, new Date(), new Date(), new Date());
+                            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mDb.paymentDao().insertPayment(singlePassPay);
+                                }
+                            });
+                        } catch (Exception e) {
+                            Toast.makeText(this, R.string.wrong_day_pass_price,Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    else if (singleVisitId==-2){
+                        try {
+                            float singlePayment2=Float.valueOf(singlePaymentStr2);
+                            float exchangeRate = Float.valueOf(exchangeRateStr);
+                            final PaymentEntry singlePassPay=new PaymentEntry(singleVisitId,getString(R.string.single_day_pass),singlePayment2/exchangeRate,new Date(),new Date(),new Date());
+                            AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mDb.paymentDao().insertPayment(singlePassPay);
+                                }
+                            });
+                        }catch (Exception e){
+                            Toast.makeText(this, R.string.wrong_day_pass_price,Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+
                 //display dialog box
                 displayDialog(isPayingClient);
             }
@@ -259,7 +312,8 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-
+    MediaPlayer mSoundPass;
+    MediaPlayer mSoundFail;
 
     //make dialog pop up
     private void displayDialog(final boolean isPayingClient){
@@ -275,8 +329,8 @@ public class MainActivity extends AppCompatActivity{
         View mTopStrip=(View) mView.findViewById(R.id.v_top_view);
         View mBottomStrip=(View) mView.findViewById(R.id.v_bottom_view);
         //create sounds
-        final MediaPlayer mSoundPass=MediaPlayer.create(getApplicationContext(),R.raw.correct_sound);
-        final MediaPlayer mSoundFail=MediaPlayer.create(getApplicationContext(),R.raw.error_sound);
+        mSoundPass=MediaPlayer.create(getApplicationContext(),R.raw.correct_sound);
+        mSoundFail=MediaPlayer.create(getApplicationContext(),R.raw.error_sound);
 
         //set photo
         setPic(mPhoto,mClientData.getId());
@@ -300,7 +354,7 @@ public class MainActivity extends AppCompatActivity{
         }else{
             mTopStrip.setBackgroundColor(getResources().getColor(R.color.colorRed));
             mBottomStrip.setBackgroundColor(getResources().getColor(R.color.colorRed));
-            mFirstLineTop.setText(getString(R.string.sorry)+mClientData.getFirstName()+",");
+            mFirstLineTop.setText(getString(R.string.sorry)+" "+mClientData.getFirstName()+",");
             mSecondLineTop.setText(R.string.your_access_has_expired);
             mFirstLineBottom.setText(R.string.please_pay_access);
             mSecondLineBottom.setText(R.string.thanks_for_staying);
@@ -336,7 +390,7 @@ public class MainActivity extends AppCompatActivity{
                 }
             }
         };
-        handler.postDelayed(runnable, 9000);
+        handler.postDelayed(runnable, 2000);
 
         dialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
@@ -357,6 +411,11 @@ public class MainActivity extends AppCompatActivity{
             public void onDismiss(DialogInterface dialogInterface) {
                 mClientData=null;
                 mPaymentData=null;
+                mSoundPass.release();
+                mSoundPass=null;
+                mSoundFail.release();
+                mSoundFail=null;
+
                 lastText=null;
             }
         });
@@ -376,6 +435,22 @@ public class MainActivity extends AppCompatActivity{
             imageView.setImageDrawable(roundedBitmapDrawable);
         } else {
             imageView.setImageResource(android.R.drawable.ic_menu_camera);
+        }
+    }
+
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "gymlog_notification_channel";
+            String description = "channel for backup notifications from server";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
         }
     }
 

@@ -141,7 +141,7 @@ public class SearchActivity extends AppCompatActivity {
 
             case R.id.opt_backup:{
                 Toast.makeText(getApplicationContext(), R.string.backup_in_process,Toast.LENGTH_SHORT).show();
-                final DataBackup dataBackup=new DataBackup(SearchActivity.this);
+                final DataBackup dataBackup=new DataBackup(SearchActivity.this,sharedPreferences);
                 if (dataBackup.hasInternetConnectivity()){
                     AppExecutors.getInstance().diskIO().execute(new Runnable() {
                         @Override
@@ -153,7 +153,7 @@ public class SearchActivity extends AppCompatActivity {
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        dataBackup.backupClientTable(clients,payments,visits);
+                                        dataBackup.backupTables(clients,payments,visits);
 
                                     }
                                 });

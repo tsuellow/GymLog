@@ -1,6 +1,6 @@
 package com.example.android.gymlog.data;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
+
 import android.arch.persistence.room.Database;
 import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
@@ -9,7 +9,7 @@ import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 import android.util.Log;
 
-@Database(entities = {ClientEntry.class, PaymentEntry.class, VisitEntry.class},version = 7)
+@Database(entities = {ClientEntry.class, PaymentEntry.class, VisitEntry.class},version = 7,exportSchema = false)
 @TypeConverters(DateConverter.class)
 public abstract class GymDatabase extends RoomDatabase {
 

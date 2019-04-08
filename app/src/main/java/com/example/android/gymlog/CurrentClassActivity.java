@@ -25,6 +25,7 @@ import com.example.android.gymlog.data.PaymentEntry;
 import com.example.android.gymlog.utils.DateMethods;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -72,14 +73,16 @@ public class CurrentClassActivity extends AppCompatActivity implements CurrentCl
     private void populateDataSource(String s) {
         String str = s + "%";
 
-        Date date= DateMethods.getRoundDate(new Date());
+        Date date= DateMethods.getCurrentClassCutoff(new Date());
+        Date classTime= DateMethods.getRoundedHour(new Date());
+        final String fullHour=new SimpleDateFormat("h:mm a").format(classTime);
 
         final LiveData<List<ClientVisitJoin>> clients = mDb.clientDao().getCurrentClass(date,str);
         clients.observe(this, new Observer<List<ClientVisitJoin>>() {
             @Override
             public void onChanged(@Nullable List<ClientVisitJoin> clientEntries) {
                 mAdapter.setClients(clientEntries);
-                mToolbar.setSubtitle(mAdapter.getItemCount()+" "+getString(R.string.participants));
+                mToolbar.setSubtitle(mAdapter.getItemCount()+" "+getString(R.string.participants)+"   "+fullHour);
 
             }
         });

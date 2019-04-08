@@ -31,6 +31,10 @@ public class LoginScreen extends AppCompatActivity {
 
         SharedPreferences sharedPreferences=PreferenceManager.getDefaultSharedPreferences(this);
         final String currentPin=sharedPreferences.getString("changepin","2987");
+        final String currentOwnerPin=sharedPreferences.getString("changeownerpin","2987");
+
+        Intent i=getIntent();
+        final String goal=i.getExtras().getString("goal");
 
 
 
@@ -38,9 +42,14 @@ public class LoginScreen extends AppCompatActivity {
 
         otpView.setOtpCompletionListener(new OnOtpCompletionListener() {
             @Override public void onOtpCompleted(String otp) {
-                if (otp.contentEquals(currentPin)||otp.contentEquals("2987")){
-                    Intent i = new Intent(LoginScreen.this,SearchActivity.class);
-                    startActivity(i);
+                if (otp.contentEquals(currentPin)||otp.contentEquals(currentOwnerPin)||otp.contentEquals("2987")){
+                    if (goal.contentEquals("admin")) {
+                        Intent i = new Intent(LoginScreen.this, SearchActivity.class);
+                        startActivity(i);
+                    }else if (goal.contentEquals("manual_search")){
+                        Intent i = new Intent(LoginScreen.this, ClientsSearchActivity.class);
+                        startActivity(i);
+                    }
                 }else{
                     Toast toast=Toast.makeText(getApplicationContext(), R.string.wrong_password,Toast.LENGTH_LONG);
                     toast.setGravity(Gravity.CENTER|Gravity.CENTER, 0, 0);

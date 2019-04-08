@@ -31,6 +31,12 @@ public interface PaymentDao {
     @Query("SELECT * FROM payment WHERE syncStatus!=1")
     List<PaymentEntry> getPaymentToBeSynced();
 
+    @Query("UPDATE payment SET syncStatus=1 WHERE syncStatus!=1")
+    void bulkUpdatePaymentSyncStatus();
+
+    @Query("UPDATE payment SET syncStatus=0 WHERE syncStatus!=0")
+    void backupResetPaymentSyncStatus();
+
     @Delete
     void deletePayment(PaymentEntry paymentEntry);
 

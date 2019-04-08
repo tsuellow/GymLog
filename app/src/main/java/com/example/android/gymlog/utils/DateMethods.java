@@ -19,6 +19,25 @@ public class DateMethods {
         return calendar.getTime();
     }
 
+    public static Date getCurrentClassCutoff(Date date){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.add(Calendar.MINUTE, -35);
+        return calendar.getTime();
+    }
+
+    public static Date getRoundedHour(Date date){
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+
 
     public static int getDiffYears(Date first, Date last) {
         Calendar a = getCalendar(first);

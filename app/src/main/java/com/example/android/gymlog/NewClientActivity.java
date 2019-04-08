@@ -113,9 +113,6 @@ public class NewClientActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-
-
-
         });
 
 
@@ -228,12 +225,17 @@ public class NewClientActivity extends AppCompatActivity {
             } else {
 
                 ActivityCompat.requestPermissions(NewClientActivity.this,
-                        new String[]{Manifest.permission.READ_CONTACTS},
+                        new String[]{Manifest.permission.WRITE_CONTACTS},
                         MY_PERMISSIONS_REQUEST_WRITE_CONTACTS);
 
             }
         }
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setPicture();
     }
 
     //to be evaluated jointly on submit
@@ -463,6 +465,9 @@ public class NewClientActivity extends AppCompatActivity {
         cropH = (cropH < 0)? 0: cropH;
         Bitmap cropImg = Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight);
         savePhotoThumbMed(cropImg);
+        if (createImageFile().exists()){
+            createImageFile().delete();
+        }
     }
     private void setPicture(){
         File medium=createMediumFile();
@@ -497,8 +502,8 @@ public class NewClientActivity extends AppCompatActivity {
 
             Bitmap thumb = Bitmap.createScaledBitmap(bitmap, 96, 96, false);
             Bitmap medium = Bitmap.createScaledBitmap(bitmap, 1000, 1000, false);
-            String qrText="{\"obj\":\"l\",\"ufid\":"+mId.getText().toString()+"}";
-            Bitmap qrCode= QrCodeUtilities.GenerateQrCode(getApplicationContext(),qrText);
+//            String qrText="{\"obj\":\"l\",\"ufid\":"+mId.getText().toString()+"}";
+//            Bitmap qrCode= QrCodeUtilities.GenerateQrCode(getApplicationContext(),qrText);
             thumb.compress(Bitmap.CompressFormat.JPEG, 100, thumbOut);
             medium.compress(Bitmap.CompressFormat.JPEG, 100, mediumOut);
 
@@ -522,7 +527,7 @@ public class NewClientActivity extends AppCompatActivity {
                 qrFile.delete();
             }
             FileOutputStream qrOut = new FileOutputStream(qrFile);
-            String qrText="{\"obj\":\"l\",\"ufid\":"+mId.getText().toString()+"}";
+            String qrText="{\"obj\":\"l\",\""+MainActivity.GYM_ID+"id\":"+mId.getText().toString()+"}";
             Bitmap qrCode= QrCodeUtilities.GenerateQrCode(getApplicationContext(),qrText);
             qrCode.compress(Bitmap.CompressFormat.JPEG, 100, qrOut);
             qrOut.flush();

@@ -1,6 +1,8 @@
 package com.example.android.gymlog;
 
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -8,7 +10,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.app.NotificationCompat;
 import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -21,29 +25,28 @@ import com.example.android.gymlog.data.GymDatabase;
 import com.example.android.gymlog.data.PaymentEntry;
 import com.example.android.gymlog.data.VisitEntry;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 public class DataBackup {
     Context mContext;
+    SharedPreferences sharedPreferences;
 
 
-    public DataBackup(Context context) {
+    public DataBackup(Context context, SharedPreferences sharedPrefs) {
         mContext=context;
+        sharedPreferences=sharedPrefs;
     }
 
-    SharedPreferences sharedPreferences =
-            PreferenceManager.getDefaultSharedPreferences(SearchActivity.getAppCont());
-
-    String SERVER_IP = sharedPreferences.getString("serverip", "192.168.1.6");
+    //String HOST_ADDRESS = sharedPreferences.getString("serverip", "192.168.1.6");
+    String HOST_ADDRESS = "https://mysqlsvr71admin.world4you.com";
 
     //functions and logic for data backup
 
@@ -51,30 +54,28 @@ public class DataBackup {
     public  boolean hasInternetConnectivity(){
         ConnectivityManager cm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        return ((netInfo != null) && (netInfo.isConnectedOrConnecting()));
+        return ((netInfo != null) );
     }
 
-    //ckeck host availability
-    public  boolean hasHostAccess(){
-        try {
-            InetAddress ip= InetAddress.getByName(SERVER_IP.trim());
-            int port=80;
-            SocketAddress socketAddress = new InetSocketAddress(ip,port);
-            Socket socket = new Socket();
-            int timeoutMs = 5000;   // 3 seconds
-            socket.connect(socketAddress, timeoutMs);
+    public boolean hasHostAccess() {
+        try{
+            URL myUrl = new URL(HOST_ADDRESS);
+            URLConnection connection = myUrl.openConnection();
+            connection.setConnectTimeout(5000);
+            connection.connect();
             return true;
-        } catch(IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            // Handle your exceptions
             return false;
         }
     }
 
-    public String SERVER_URL="http://"+SERVER_IP.trim()+"/gymlog/";
-            //"http://"+SERVER_IP+"/gymlog/";
 
-    //set counters
-    //for clients
+
+//    public String SERVER_URL="http://"+HOST_ADDRESS.trim()+"/gymlog/";
+    public String SERVER_URL="https://www.id-ex.de/GymLog/php/";
+
+
     private int COUNTER_SYNCED_CLIENT;
     private int SYNC_CLIENT_VOLUME;
     //for payments
@@ -85,23 +86,19 @@ public class DataBackup {
     private int SYNC_VISIT_VOLUME;
 
     //backup entire client synclist
-    public void backupClientTable(List<ClientEntry> clients, List<PaymentEntry> payments, List<VisitEntry>  visits){
+    public void backupTables(List<ClientEntry> clients, List<PaymentEntry> payments, List<VisitEntry>  visits){
         COUNTER_SYNCED_CLIENT =0;
         SYNC_CLIENT_VOLUME=clients.size();
         COUNTER_SYNCED_PAYMENT =0;
         SYNC_PAYMENT_VOLUME=payments.size();
         COUNTER_SYNCED_VISIT =0;
         SYNC_VISIT_VOLUME=visits.size();
-        CountDownLatch requestCountDown = new CountDownLatch(SYNC_CLIENT_VOLUME+SYNC_PAYMENT_VOLUME+SYNC_VISIT_VOLUME);
-        for (int i=0;i<SYNC_CLIENT_VOLUME;i++){
-            syncSingleClient(clients.get(i),mContext,requestCountDown);
-        }
-        for (int i=0;i<SYNC_PAYMENT_VOLUME;i++){
-            syncSinglePayment(payments.get(i),mContext,requestCountDown);
-        }
-        for (int i=0;i<SYNC_VISIT_VOLUME;i++){
-            syncSingleVisit(visits.get(i),mContext,requestCountDown);
-        }
+        CountDownLatch requestCountDown = new CountDownLatch(1);
+
+        JSONObject backupJson=createClientJson(clients,payments,visits);
+
+        syncAll(backupJson,mContext,requestCountDown);
+
         new Thread(new ThreadToBeHeld(requestCountDown)).start();
     }
 
@@ -140,155 +137,104 @@ public class DataBackup {
         }};
 
 
-    //sync single client record to server
-    private void syncSingleClient(final ClientEntry client, final Context context, final CountDownLatch countDownLatch){
-
-        JSONObject params=new JSONObject();
-        try {
-            params.put("id", client.getId());
-            params.put("firstname", null2String(client.getFirstName()));
-            params.put("lastname", null2String(client.getLastName()));
-            params.put("dob", null2String(DateConverter.getDateString(client.getDob())));
-            params.put("gender", null2String(client.getGender()));
-            params.put("occupation", null2String(client.getOccupation()));
-            params.put("phone", null2String(client.getPhone()));
-            params.put("photo", null2String(client.getPhoto()));
-            params.put("qrcode", null2String(client.getQrCode()));
-            params.put("lastupdated", null2String(DateConverter.getDateString(client.getLastUpdated())));
-
-        }catch (JSONException e){
-            e.printStackTrace();
-        }
+    //sync to server
+    private void syncAll(final JSONObject backupJson, final Context context, final CountDownLatch countDownLatch){
 
         JsonObjectRequest jsonObjectRequest;
 
             jsonObjectRequest = new JsonObjectRequest
-                    (Request.Method.POST, SERVER_URL + "client_insert.php", params, new Response.Listener<JSONObject>() {
+                    (Request.Method.POST, SERVER_URL + "backup_all.php", backupJson, new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
                             try {
                                 String res = response.getString("response");
+                                COUNTER_SYNCED_CLIENT=response.getInt("counter_client");
+                                COUNTER_SYNCED_PAYMENT=response.getInt("counter_payment");
+                                COUNTER_SYNCED_VISIT=response.getInt("counter_visit");
+                                Log.d("belloy","works");
                                 if (res.equals("OK")) {
-                                    COUNTER_SYNCED_CLIENT++;
                                     //update sqlite db
-                                    client.setSyncStatus(1);
                                     AppExecutors.getInstance().diskIO().execute(new Runnable() {
                                         @Override
                                         public void run() {
-                                            GymDatabase.getInstance(context).clientDao().updateClient(client);
+                                            GymDatabase.getInstance(context).clientDao().bulkUpdateClientSyncStatus();
+                                            GymDatabase.getInstance(context).paymentDao().bulkUpdatePaymentSyncStatus();
+                                            GymDatabase.getInstance(context).visitDao().bulkUpdateVisitSyncStatus();
                                         }
                                     });
                                 }
                             } catch (JSONException e) {
                                 e.printStackTrace();
+                                Log.d("belloy"," wtf");
                             }
                             new Thread(new CountdownExecuted(countDownLatch)).start();
+
                         }
                     }, new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
+                            error.printStackTrace();
+                            Log.d("belloy"," error");
                             new Thread(new CountdownExecuted(countDownLatch)).start();
                         }
                     });
         MySingleton.getInstance(context).addToRequestQueue(jsonObjectRequest);
     }
 
-    //sync single payment record to server
-    private void syncSinglePayment(final PaymentEntry payment, final Context context, final CountDownLatch countDownLatch){
-
-        JSONObject params=new JSONObject();
-        try {
-            params.put("id", payment.getId());
-            params.put("clientid", payment.getClientId());
-            params.put("product", null2String(payment.getProduct()));
-            params.put("amountusd", payment.getAmountUsd());
-            params.put("paidfrom", null2String(DateConverter.getDateString(payment.getPaidFrom())));
-            params.put("paiduntil", null2String(DateConverter.getDateString(payment.getPaidUntil())));
-            params.put("timestamp", null2String(DateConverter.getDateString(payment.getTimestamp())));
-            params.put("isvalid", payment.getIsValid());
-
-        }catch (JSONException e){
-            e.printStackTrace();
-        }
+    public void syncAllAutomatic(final JSONObject backupJson, final Context context){
 
         JsonObjectRequest jsonObjectRequest;
 
-            jsonObjectRequest = new JsonObjectRequest
-                    (Request.Method.POST, SERVER_URL + "payment_insert.php", params, new Response.Listener<JSONObject>() {
-                        @Override
-                        public void onResponse(JSONObject response) {
-                            try {
-                                String res = response.getString("response");
-                                if (res.equals("OK")) {
-                                    COUNTER_SYNCED_PAYMENT++;
-                                    //update sqlite db
-                                    payment.setSyncStatus(1);
-                                    AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            GymDatabase.getInstance(context).paymentDao().updatePayment(payment);
-                                        }
-                                    });
-                                }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            new Thread(new CountdownExecuted(countDownLatch)).start();
-                        }
-                    }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
-                            new Thread(new CountdownExecuted(countDownLatch)).start();
-                        }
-                    });
-
-        MySingleton.getInstance(context).addToRequestQueue(jsonObjectRequest);
-    }
-
-    //sync single client record to server
-    private void syncSingleVisit(final VisitEntry visit, final Context context, final CountDownLatch countDownLatch){
-
-        JSONObject params=new JSONObject();
-        try {
-            params.put("id", visit.getId());
-            params.put("clientid", visit.getClientId());
-            params.put("timestamp", null2String(DateConverter.getDateString(visit.getTimestamp())));
-            params.put("access", null2String(visit.getAccess()));
-        }catch (JSONException e){
-            e.printStackTrace();
-        }
-
-        JsonObjectRequest jsonObjectRequest;
         jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.POST, SERVER_URL + "visit_insert.php", params, new Response.Listener<JSONObject>() {
+                (Request.Method.POST, SERVER_URL + "backup_all.php", backupJson, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
                             String res = response.getString("response");
+                            COUNTER_SYNCED_CLIENT=response.getInt("counter_client");
+                            COUNTER_SYNCED_PAYMENT=response.getInt("counter_payment");
+                            COUNTER_SYNCED_VISIT=response.getInt("counter_visit");
+                            Log.d("belloy","works");
                             if (res.equals("OK")) {
-                                COUNTER_SYNCED_VISIT++;
                                 //update sqlite db
-                                visit.setSyncStatus(1);
                                 AppExecutors.getInstance().diskIO().execute(new Runnable() {
                                     @Override
                                     public void run() {
-                                        GymDatabase.getInstance(context).visitDao().updateVisit(visit);
+                                        GymDatabase.getInstance(context).clientDao().bulkUpdateClientSyncStatus();
+                                        GymDatabase.getInstance(context).paymentDao().bulkUpdatePaymentSyncStatus();
+                                        GymDatabase.getInstance(context).visitDao().bulkUpdateVisitSyncStatus();
                                     }
                                 });
+                                String notificationText=""+COUNTER_SYNCED_CLIENT+" "+mContext.getString(R.string.clients)+ " \n"+
+                                        COUNTER_SYNCED_PAYMENT+" "+mContext.getString(R.string.payments)+ " \n"+
+                                        COUNTER_SYNCED_VISIT+" "+mContext.getString(R.string.visits)+ " \n"+
+                                        mContext.getString(R.string.were_synced);
+                                showNotification(context,context.getString(R.string.gymlog_backup_successful),notificationText);
+                            }else{
+                                showNotification(context,context.getString(R.string.gymlog_backup_failed),context.getString(R.string.failed_no_connection));
                             }
+                            //notification
                         } catch (JSONException e) {
                             e.printStackTrace();
+                            Log.d("belloy","malformed JSON response");
+                            showNotification(context,context.getString(R.string.gymlog_backup_failed),context.getString(R.string.failed_malformed_json));
                         }
-                        new Thread(new CountdownExecuted(countDownLatch)).start();
+
+
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        new Thread(new CountdownExecuted(countDownLatch)).start();
+                        error.printStackTrace();
+                        Log.d("belloy"," error");
+                        showNotification(context,context.getString(R.string.gymlog_backup_failed),context.getString(R.string.failed_response_w_errors));
+
                     }
                 });
         MySingleton.getInstance(context).addToRequestQueue(jsonObjectRequest);
     }
+
+
 
     //convert null to ""
     private String null2String(String textField){
@@ -325,6 +271,109 @@ public class DataBackup {
             }
         });
         alertDialog.show();
+    }
+
+
+    public JSONObject createClientJson(List<ClientEntry> clients, List<PaymentEntry> payments, List<VisitEntry>  visits){
+
+        JSONObject backupJson=new JSONObject();
+
+        JSONArray clientDataArray=new JSONArray();
+        for (int i=0;i<clients.size();i++){
+            ClientEntry client=clients.get(i);
+            JSONObject clientObject=new JSONObject();
+            try {
+                //add client data to each object
+                clientObject.put("id", client.getId());
+                clientObject.put("firstname", null2String(client.getFirstName()));
+                clientObject.put("lastname", null2String(client.getLastName()));
+                clientObject.put("dob", null2String(DateConverter.getDateString(client.getDob())));
+                clientObject.put("gender", null2String(client.getGender()));
+                clientObject.put("occupation", null2String(client.getOccupation()));
+                clientObject.put("phone", null2String(client.getPhone()));
+                clientObject.put("photo", null2String(client.getPhoto()));
+                clientObject.put("qrcode", null2String(client.getQrCode()));
+                clientObject.put("lastupdated", null2String(DateConverter.getDateString(client.getLastUpdated())));
+                clientDataArray.put(clientObject);
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+        }
+
+        JSONArray paymentDataArray=new JSONArray();
+        for (int i=0;i<payments.size();i++){
+            PaymentEntry payment=payments.get(i);
+            JSONObject paymentObject=new JSONObject();
+            try {
+                //add client data to each object
+                paymentObject.put("id", payment.getId());
+                paymentObject.put("clientid", payment.getClientId());
+                paymentObject.put("product", null2String(payment.getProduct()));
+                paymentObject.put("amountusd", payment.getAmountUsd());
+                paymentObject.put("paidfrom", null2String(DateConverter.getDateString(payment.getPaidFrom())));
+                paymentObject.put("paiduntil", null2String(DateConverter.getDateString(payment.getPaidUntil())));
+                paymentObject.put("timestamp", null2String(DateConverter.getDateString(payment.getTimestamp())));
+                paymentObject.put("isvalid", payment.getIsValid());
+                paymentDataArray.put(paymentObject);
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+        }
+
+        JSONArray visitDataArray=new JSONArray();
+        for (int i=0;i<visits.size();i++){
+            VisitEntry visit=visits.get(i);
+            JSONObject visitObject=new JSONObject();
+            try {
+                //add client data to each object
+                visitObject.put("id", visit.getId());
+                visitObject.put("clientid", visit.getClientId());
+                visitObject.put("timestamp", null2String(DateConverter.getDateString(visit.getTimestamp())));
+                visitObject.put("access", null2String(visit.getAccess()));
+                visitDataArray.put(visitObject);
+            }catch (JSONException e){
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            String gymName=sharedPreferences.getString("gymname","MyGym");
+            String gymUserName= gymName.replace(" ","");
+            String gymOwner=sharedPreferences.getString("gymowner","Fulano de Tal");
+            String pin=sharedPreferences.getString("changepin","1234");
+
+            backupJson.put("gym_id", MainActivity.GYM_ID);
+            backupJson.put("backup_date", DateConverter.getDateString(new Date()));
+            backupJson.put("user", gymUserName);
+            backupJson.put("pin", pin);
+            backupJson.put("gym_name", gymName);
+            backupJson.put("gym_owner", gymOwner);
+
+            backupJson.put("clientData", clientDataArray);
+            backupJson.put("paymentData", paymentDataArray);
+            backupJson.put("visitData", visitDataArray);
+        }catch (JSONException e){
+            e.printStackTrace();
+        }
+
+        return backupJson;
+    }
+
+    private static void showNotification(Context context,String title, String text) {
+
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(context,MainActivity.CHANNEL_ID)
+                        .setSmallIcon(R.drawable.logo_small)
+                        .setContentTitle(title)
+                        .setContentText(text)
+                        .setStyle(new NotificationCompat.BigTextStyle()
+                                .bigText(text));
+
+        mBuilder.setDefaults(Notification.DEFAULT_SOUND);
+        mBuilder.setAutoCancel(true);
+        NotificationManager mNotificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(1, mBuilder.build());
     }
 
 }

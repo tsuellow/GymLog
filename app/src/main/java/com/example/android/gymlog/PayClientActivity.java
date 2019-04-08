@@ -169,8 +169,7 @@ public class PayClientActivity extends AppCompatActivity {
             public void onClick(View view) {
                 onSubmit();
 
-                Intent i=new Intent(getApplicationContext(),SearchActivity.class);
-                startActivity(i);
+
             }
         });
     }
@@ -183,6 +182,9 @@ public class PayClientActivity extends AppCompatActivity {
 
         if(productCorrect && amountCorrect){
             populateDb();
+
+            Intent i=new Intent(getApplicationContext(),SearchActivity.class);
+            startActivity(i);
         }
 
     }
@@ -191,7 +193,7 @@ public class PayClientActivity extends AppCompatActivity {
     private boolean checkProduct(){
         if (mProduct.getText().toString().trim().isEmpty()){
             loProduct.setErrorEnabled(true);
-            loProduct.setError(getString(R.string.err_first_name));
+            loProduct.setError(getString(R.string.enter_product));
             mProduct.setError(getString(R.string.input_required));
             return false;
         }
@@ -201,7 +203,7 @@ public class PayClientActivity extends AppCompatActivity {
     private boolean checkAmount(){
         if (mAmount.getText().toString().trim().isEmpty()){
             loAmount.setErrorEnabled(true);
-            loAmount.setError(getString(R.string.err_first_name));
+            loAmount.setError(getString(R.string.enter_valid_amount));
             mAmount.setError(getString(R.string.input_required));
             return false;
         }else{
@@ -211,7 +213,7 @@ public class PayClientActivity extends AppCompatActivity {
                 return true;
             }catch (Exception e){
                 loAmount.setErrorEnabled(true);
-                loAmount.setError(getString(R.string.err_first_name));
+                loAmount.setError(getString(R.string.enter_valid_amount));
                 mAmount.setError(getString(R.string.input_has_to_be_numeric));
                 return false;
             }

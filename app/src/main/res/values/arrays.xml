@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <array name="language_values">
-        <item>@string/english_key</item>
-        <item>@string/spanish_key</item>
+    <array name="currency_values">
+        <item>usd_key</item>
+        <item>cordoba_key</item>
     </array>
 
-    <array name="language_labels">
-        <item>@string/english_label</item>
-        <item>@string/spanish_label</item>
+    <array name="currency_labels">
+        <item>USD</item>
+        <item>C$</item>
     </array>
 </resources>

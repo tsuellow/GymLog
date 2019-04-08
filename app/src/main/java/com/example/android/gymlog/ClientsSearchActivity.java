@@ -205,6 +205,9 @@ public class ClientsSearchActivity extends AppCompatActivity implements ClientsS
         }
     }
 
+    MediaPlayer mSoundPass;
+    MediaPlayer mSoundFail;
+
     //make dialog pop up
     private void displayDialog(final boolean isPayingClient){
         AlertDialog.Builder mBuilder=new AlertDialog.Builder(ClientsSearchActivity.this);
@@ -219,8 +222,8 @@ public class ClientsSearchActivity extends AppCompatActivity implements ClientsS
         View mTopStrip=(View) mView.findViewById(R.id.v_top_view);
         View mBottomStrip=(View) mView.findViewById(R.id.v_bottom_view);
 
-        final MediaPlayer mSoundPass=MediaPlayer.create(getApplicationContext(),R.raw.correct_sound);
-        final MediaPlayer mSoundFail=MediaPlayer.create(getApplicationContext(),R.raw.error_sound);
+        mSoundPass=MediaPlayer.create(getApplicationContext(),R.raw.correct_sound);
+        mSoundFail=MediaPlayer.create(getApplicationContext(),R.raw.error_sound);
 
         setPic(mPhoto,mClientData.getId());
 
@@ -279,7 +282,7 @@ public class ClientsSearchActivity extends AppCompatActivity implements ClientsS
                 }
             }
         };
-        handler.postDelayed(runnable, 9000);
+        handler.postDelayed(runnable, 2000);
 
         dialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
@@ -300,6 +303,10 @@ public class ClientsSearchActivity extends AppCompatActivity implements ClientsS
             public void onDismiss(DialogInterface dialogInterface) {
                 mClientData=null;
                 mPaymentData=null;
+                mSoundPass.release();
+                mSoundPass=null;
+                mSoundFail.release();
+                mSoundFail=null;
                 //in this case we go back to the scanner
                 Intent i= new Intent(getApplicationContext(),MainActivity.class);
                 startActivity(i);

@@ -115,7 +115,7 @@
     <string name="error_pin_too_long">PIN must be 4 digits long</string>
     <string name="error_pin_wrong">Wrong entries! either old or new PIN does not match.</string>
     <string name="reset_pin_summay">Reset Admin access PIN</string>
-    <string name="change_pin">Change PIN</string>
+    <string name="change_pin">Change reception PIN</string>
     <string name="basic_settings">Basic Settings</string>
     <string name="use_front_camera">Use front camera</string>
     <string name="language">Language</string>
@@ -139,6 +139,41 @@
     <string name="yes">YES</string>
     <string name="no">NO</string>
     <string name="xxxx_replaceable">XXXX will be replaced with the first name of the client</string>
+    <string name="enter_product">Enter a product</string>
+    <string name="enter_valid_amount">Enter a valid amount</string>
+    <string name="unassigned_qr_code">This QR code has not been assigned</string>
+    <string name="gym_name">Gym name</string>
+    <string name="gym_owner">Gym owner</string>
+    <string name="my_gym">My gym</string>
+    <string name="single_day_pass">Single day pass</string>
+    <string name="wrong_day_pass_price">wrongly typed day pass price</string>
+    <string name="backup_all">Backup all</string>
+    <string name="backup_all_sum">Rewrites all data to the server</string>
+    <string name="recover_all">Recover all</string>
+    <string name="recover_all_sum">Retrieves all data from the server</string>
+    <string name="selected_time">Selected time fuck %s</string>
+    <string name="gymlog_backup_successful">Gymlog backup successful</string>
+    <string name="gymlog_backup_failed">Gymlog backup failed</string>
+    <string name="failed_no_connection">No connection could be established</string>
+    <string name="failed_response_w_errors">Server response contained errors</string>
+    <string name="failed_malformed_json">Malformed JSON response</string>
+    <string name="backup_time">Backup time</string>
+    <string name="change_owner_pin">Change owner PIN</string>
+    <string name="reset_reception_pin">Reset reception access PIN</string>
+    <string name="reset_owner_pin">Reset owner access PIN</string>
+    <string name="owner_pin">Owner PIN</string>
+    <string name="value_success">new value was saved successfully</string>
+    <string name="value_has_to_be_numeric">value has to be numeric</string>
+    <string name="wrong_owner_pin">wrong owner PIN</string>
+    <string name="exchange_rate">Exchange rate C$/USD</string>
+    <string name="single_pass_minus1">Single day pass ID:-1</string>
+    <string name="single_pass_minus2">Single day pass ID:-2</string>
+    <string name="value_in_cs">Value in C$</string>
+    <string name="confirm">confirm</string>
+    <string name="toast_backup_all">Backup status has been reset. Back data up again now!</string>
+    <string name="payment_settings">Payment Settings</string>
+    <string name="preferred_currency">Preferred currency</string>
+    <string name="secure_manual_search">Secure manual search</string>
 
 
 </resources>

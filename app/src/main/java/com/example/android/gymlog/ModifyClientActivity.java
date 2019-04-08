@@ -393,6 +393,9 @@ public class ModifyClientActivity extends AppCompatActivity {
         cropH = (cropH < 0)? 0: cropH;
         Bitmap cropImg = Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight);
         savePhotoThumbMed(cropImg);
+        if (createImageFile().exists()){
+            createImageFile().delete();
+        }
     }
     private void setPicture(){
         File medium=createMediumFile();
@@ -431,7 +434,7 @@ public class ModifyClientActivity extends AppCompatActivity {
                     mDob.setText(getDateString(cal));
                 }
                 //gender setting
-                if (clientEntry.getGender()=="m"){
+                if (clientEntry.getGender().contentEquals("m")){
                     mMaleRb.setChecked(true);
                 }else{
                     mFemaleRb.setChecked(true);

@@ -24,10 +24,11 @@
             android:layout_height="wrap_content">
 
             <EditText
-                android:layout_width="120dp"
+                android:layout_width="140dp"
                 android:layout_height="match_parent"
                 android:hint="@string/id"
                 android:textStyle="bold"
+                android:inputType="numberSigned"
                 android:ems="10"
                 android:id="@+id/ev_id"
                 />

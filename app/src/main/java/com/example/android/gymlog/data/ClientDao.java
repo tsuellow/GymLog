@@ -56,6 +56,12 @@ public interface ClientDao {
             "ORDER BY timestamp DESC")
     LiveData<List<ClientVisitJoin>> getCurrentClass(Date queryDate, String namePart);
 
+    @Query("UPDATE client SET syncStatus=1 WHERE syncStatus!=1")
+    void bulkUpdateClientSyncStatus();
+
+    @Query("UPDATE client SET syncStatus=0 WHERE syncStatus!=0")
+    void backupResetClientSyncStatus();
+
     @Insert
     void insertClient(ClientEntry clientEntry);
 

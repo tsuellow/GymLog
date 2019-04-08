@@ -26,6 +26,12 @@ public interface VisitDao {
     @Query("SELECT * FROM visit WHERE syncStatus!=1")
     List<VisitEntry> getVisitToBeSynced();
 
+    @Query("UPDATE visit SET syncStatus=1 WHERE syncStatus!=1")
+    void bulkUpdateVisitSyncStatus();
+
+    @Query("UPDATE visit SET syncStatus=0 WHERE syncStatus!=0")
+    void backupResetVisitSyncStatus();
+
     @Update(onConflict = OnConflictStrategy.REPLACE)
     void updateVisit(VisitEntry visitEntry);
 

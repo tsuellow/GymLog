@@ -10,7 +10,7 @@
     <string name="please_pay_access">Por favor procedé a pagar en caja para renovarlo.</string>
     <string name="thanks_for_staying">Gracias por preferirnos!</string>
     <string name="qr_code_scanner">Escaner de código QR</string>
-    <string name="focus_barcode">Enfocá el código de barras</string>
+    <string name="focus_barcode">Enfocá el código de barras sobre la línea roja</string>
     <string name="manual_search">Búsqueda manual</string>
     <string name="contact_us">¿Te gusta nuestra aplicación? Contactános al correo theo.suellow@gmail.com</string>
     <string name="admin">Admin</string>
@@ -106,4 +106,7 @@
     <string name="until">hasta</string>
     <string name="yes">SI</string>
     <string name="xxxx_replaceable">XXXX será reemplazado con el nombre del cliente</string>
+    <string name="enter_product">Seleccioná un producto</string>
+    <string name="enter_valid_amount">Ingresá un monto</string>
+    <string name="unassigned_qr_code">Este código QR no ha sido asignado aún</string>
 </resources>

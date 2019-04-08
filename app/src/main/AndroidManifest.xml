@@ -91,6 +91,10 @@
             android:name=".SettingsActivity"
             android:label="@string/settings"
             android:parentActivityName=".SearchActivity" />
+        <receiver
+            android:name=".BackupBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true" />
     </application>
 
 </manifest>
