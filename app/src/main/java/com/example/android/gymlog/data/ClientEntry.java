@@ -1,6 +1,7 @@
 package com.example.android.gymlog.data;
 
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 
 import java.util.Date;
@@ -33,6 +34,21 @@ public class ClientEntry {
         this.photo = photo;
         this.qrCode = qrCode;
         this.lastUpdated = lastUpdated;
+    }
+
+    @Ignore
+    public ClientEntry(int id, String firstName, String lastName, Date dob, String gender, String occupation, String phone, String photo, String qrCode, Date lastUpdated, int syncStatus) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dob = dob;
+        this.gender = gender;
+        this.occupation = occupation;
+        this.phone = phone;
+        this.photo = photo;
+        this.qrCode = qrCode;
+        this.lastUpdated = lastUpdated;
+        this.syncStatus = syncStatus;
     }
 
     public int getId() {

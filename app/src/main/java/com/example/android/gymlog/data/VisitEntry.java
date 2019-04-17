@@ -2,6 +2,7 @@ package com.example.android.gymlog.data;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
@@ -26,6 +27,15 @@ public class VisitEntry {
         this.clientId = clientId;
         this.timestamp = timestamp;
         this.access = access;
+    }
+
+    @Ignore
+    public VisitEntry(int id, int clientId, Date timestamp, String access, int syncStatus) {
+        this.id = id;
+        this.clientId = clientId;
+        this.timestamp = timestamp;
+        this.access = access;
+        this.syncStatus = syncStatus;
     }
 
     public int getId() {

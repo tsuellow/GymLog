@@ -64,4 +64,26 @@ public class DateMethods {
         return day + "/" + month + "/" + year;
     }
 
+    public static String getTimeString(int hour, int min){
+        String timePicked = "";
+        String am_pm;
+        String sHour;
+        if(hour >12){
+            hour = hour-12;
+            am_pm="pm";
+            sHour=String.valueOf(hour);
+        } else {
+            am_pm="am";
+            sHour = String.valueOf(hour);
+        }
+        String sMinute = "00";
+        if(min < 10){
+            sMinute = "0"+min;
+        } else {
+            sMinute = String.valueOf(min);
+        }
+        timePicked=""+sHour+":"+sMinute+" "+am_pm;
+        return timePicked;
+    }
+
 }

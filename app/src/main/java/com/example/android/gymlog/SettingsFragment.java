@@ -7,6 +7,7 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputLayout;
@@ -18,6 +19,7 @@ import com.example.android.gymlog.data.ClientEntry;
 import com.example.android.gymlog.data.GymDatabase;
 import com.example.android.gymlog.data.PaymentEntry;
 import com.example.android.gymlog.data.VisitEntry;
+import com.example.android.gymlog.utils.DateMethods;
 import com.takisoft.fix.support.v7.preference.PreferenceFragmentCompat;
 
 import android.support.v7.preference.PreferenceManager;
@@ -56,46 +58,11 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
 
         //alternative solution
         backupTime =(Preference) findPreference("timebackup");
-        onTimeSetListenerBackup=new TimePickerDialog.OnTimeSetListener() {
-            @Override
-            public void onTimeSet(TimePicker timePicker, int hour, int min) {
-                String timePicked = "";
-                String sHour = "00";
-                if(hour < 10){
-                    sHour = "0"+hour;
-                } else {
-                    sHour = String.valueOf(hour);
-                }
-                String sMinute = "00";
-                if(min < 10){
-                    sMinute = "0"+min;
-                } else {
-                    sMinute = String.valueOf(min);
-                }
-                timePicked=""+sHour+":"+sMinute;
-                SharedPreferences sharedPreferences=PreferenceManager.getDefaultSharedPreferences(getContext());
-                SharedPreferences.Editor editor=sharedPreferences.edit();
-                editor.putString("timebackup",timePicked);
-                editor.apply();
-                backupTime.setSummary("Backup set for: "+timePicked);
-                //now trigger backup
-                Calendar cal=Calendar.getInstance();
-                int year=cal.get(Calendar.YEAR);
-                int month=cal.get(Calendar.MONTH);
-                int day=cal.get(Calendar.DAY_OF_MONTH);
-                cal.set(year,month,day,hour,min,0);
-                long timeInMillis=cal.getTimeInMillis();
-                setBackupTime(timeInMillis);
-            }
-        };
 
         backupTime.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
             @Override
             public boolean onPreferenceClick(Preference preference) {
-
-                TimePickerDialog dialog=new TimePickerDialog(getContext(),onTimeSetListenerBackup,12,0,true);
-
-                dialog.show();
+                displayTimePickerDialog(getString(R.string.backup_time));
                 return false;
             }
         });
@@ -132,7 +99,14 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                 return false;
             }
         });
-        restoreAll=(Preference) findPreference("restoreall");
+        restoreAll=(Preference) findPreference("recoverall");
+        restoreAll.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+            @Override
+            public boolean onPreferenceClick(Preference preference) {
+                displayConfirmDialog("recoverall",restoreAll.getTitle().toString());
+                return false;
+            }
+        });
 
         changePin=(Preference) findPreference("changepin");
         changePin.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -293,9 +267,13 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
                                     mDb.visitDao().backupResetVisitSyncStatus();
                             }
                         });
+                        Toast.makeText(getContext(), R.string.toast_backup_all,Toast.LENGTH_SHORT).show();
+                    }else if (key.contentEquals("recoverall")){
+                        DataBackup dataBackup=new DataBackup(getContext(),sharedPreferences);
+                        dataBackup.restoreAll();
                     }
                     dialog.dismiss();
-                    Toast.makeText(getContext(), R.string.toast_backup_all,Toast.LENGTH_SHORT).show();
+
                 }else{
                     Toast.makeText(getContext(), R.string.wrong_owner_pin,Toast.LENGTH_SHORT).show();
                 }
@@ -330,7 +308,81 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
             e.printStackTrace();
         }
 
-        Toast.makeText(getContext(), "Automatic backup is set", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(), R.string.backup_time_toast, Toast.LENGTH_SHORT).show();
+    }
+
+
+    private void displayTimePickerDialog(String title){
+        AlertDialog.Builder mBuilder=new AlertDialog.Builder(getContext());
+        View mView=getLayoutInflater().inflate(R.layout.dialog_time_picker,null);
+        final TimePicker mTimePicker=(TimePicker) mView.findViewById(R.id.tp_time_picker);
+        mTimePicker.setIs24HourView(false);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            mTimePicker.setHour(12);
+            mTimePicker.setMinute(0);
+        } else {
+            mTimePicker.setCurrentHour(12);
+            mTimePicker.setCurrentMinute(0);
+        }
+
+        Button mOk=(Button) mView.findViewById(R.id.btn_ok_tp);
+        Button mCancel=(Button) mView.findViewById(R.id.btn_cancel_tp);
+        mBuilder.setTitle(title);
+        mBuilder.setView(mView);
+
+        final AlertDialog dialog=mBuilder.create();
+
+        //button to dismiss dialog
+        mOk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int newHour, newMinute;
+                if (Build.VERSION.SDK_INT >= 23 ){
+                    newHour = mTimePicker.getHour();
+                    newMinute = mTimePicker.getMinute();
+                }
+                else{
+                    newHour = mTimePicker.getCurrentHour();
+                    newMinute = mTimePicker.getCurrentMinute();
+                }
+                String timePicked = "";
+                String sHour = "00";
+                if(newHour < 10){
+                    sHour = "0"+newHour;
+                } else {
+                    sHour = String.valueOf(newHour);
+                }
+                String sMinute = "00";
+                if(newMinute < 10){
+                    sMinute = "0"+newMinute;
+                } else {
+                    sMinute = String.valueOf(newMinute);
+                }
+                timePicked=""+sHour+":"+sMinute;
+                String textTimePicked=getString(R.string.each_full_hour)+" "+sMinute+" "+getString(R.string.minutes);
+                SharedPreferences.Editor editor=sharedPreferences.edit();
+                editor.putString("timebackup",timePicked);
+                editor.apply();
+                backupTime.setSummary(textTimePicked);
+                //now trigger backup
+                Calendar cal=Calendar.getInstance();
+                int year=cal.get(Calendar.YEAR);
+                int month=cal.get(Calendar.MONTH);
+                int day=cal.get(Calendar.DAY_OF_MONTH);
+                cal.set(year,month,day,newHour,newMinute,0);
+                long timeInMillis=cal.getTimeInMillis();
+                setBackupTime(timeInMillis);
+                dialog.dismiss();
+            }
+        });
+
+        mCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
     }
 
 
@@ -340,7 +392,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements Shared
         exchangeRate.setSummary("C$ "+sharedPreferences.getString("usd2cs","1"));
         singlePassMinus1.setSummary("C$ "+sharedPreferences.getString("passminus1","0"));
         singlePassMinus2.setSummary("C$ "+sharedPreferences.getString("passminus2","0"));
-        backupTime.setSummary("Backup set for: "+sharedPreferences.getString("timebackup","not set"));
+        backupTime.setSummary(getString(R.string.each_full_hour)+" "+sharedPreferences.getString("timebackup","00:00").substring(3)+" "+getString(R.string.minutes));
         //languagePref.setSummary(languagePref.getEntry());
     }
 

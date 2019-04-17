@@ -41,7 +41,7 @@ public interface ClientDao {
 
     @Query("SELECT C.* FROM (SELECT clientId, MAX(paidUntil) AS paidUntil " +
             "FROM payment WHERE isValid=1 AND clientId>0 GROUP BY clientId) AS P " +
-            "LEFT JOIN client AS C ON P.clientId=C.id WHERE paidUntil=:date ORDER BY C.firstName ASC")
+            "LEFT JOIN client AS C ON P.clientId=C.id WHERE substr(paidUntil,1,10)=substr(:date,1,10) ORDER BY C.firstName ASC")
     LiveData<List<ClientEntry>> getPaymentDueClients(Date date);
 
     @Query("SELECT C.id, C.firstName, C.lastName, C.photo, V.timestamp from " +
@@ -61,6 +61,9 @@ public interface ClientDao {
 
     @Query("UPDATE client SET syncStatus=0 WHERE syncStatus!=0")
     void backupResetClientSyncStatus();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void restoreClient(ClientEntry clientEntry);
 
     @Insert
     void insertClient(ClientEntry clientEntry);

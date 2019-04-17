@@ -57,7 +57,9 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity{
 
-    public static final String GYM_ID="uf";
+    public static final String GYM_ID="xx";
+    public static final String USER_NAME="TestGym";
+
     public static final String CHANNEL_ID="111";
     private Button mManualSearch;
     private Context mContext;
@@ -214,7 +216,7 @@ public class MainActivity extends AppCompatActivity{
             }
         });
 
-        final LiveData<PaymentEntry> currentPayment = mDb.paymentDao().getCurrentPaymentByClient(clientId,DateMethods.getRoundDate(new Date()));
+        final LiveData<PaymentEntry> currentPayment = mDb.paymentDao().getCurrentPaymentByClient(clientId,new Date());
         currentPayment.observe(this, new Observer<PaymentEntry>() {
             @Override
             public void onChanged(@Nullable PaymentEntry paymentEntry) {
@@ -271,12 +273,16 @@ public class MainActivity extends AppCompatActivity{
                     String singlePaymentStr1 = sharedPreferences.getString("passminus1", "0");
                     String singlePaymentStr2 = sharedPreferences.getString("passminus2", "0");
                     String exchangeRateStr = sharedPreferences.getString("usd2cs", "1");
+                    String currencyKey = sharedPreferences.getString("preferredcurrency","USD");
+                    String currency=null;
+                    if (currencyKey.contentEquals("usd_key")){currency="USD";}else{currency="C$";}
 
                     if (singleVisitId == -1) {
                         try {
                             float singlePayment1 = Float.valueOf(singlePaymentStr1);
                             float exchangeRate = Float.valueOf(exchangeRateStr);
-                            final PaymentEntry singlePassPay = new PaymentEntry(singleVisitId, getString(R.string.single_day_pass), singlePayment1/exchangeRate, new Date(), new Date(), new Date());
+                            final PaymentEntry singlePassPay = new PaymentEntry(singleVisitId, getString(R.string.single_day_pass), singlePayment1/exchangeRate,
+                                    new Date(), new Date(), new Date(),exchangeRate,"C$",null,null);
                             AppExecutors.getInstance().diskIO().execute(new Runnable() {
                                 @Override
                                 public void run() {
@@ -291,7 +297,8 @@ public class MainActivity extends AppCompatActivity{
                         try {
                             float singlePayment2=Float.valueOf(singlePaymentStr2);
                             float exchangeRate = Float.valueOf(exchangeRateStr);
-                            final PaymentEntry singlePassPay=new PaymentEntry(singleVisitId,getString(R.string.single_day_pass),singlePayment2/exchangeRate,new Date(),new Date(),new Date());
+                            final PaymentEntry singlePassPay=new PaymentEntry(singleVisitId,getString(R.string.single_day_pass),singlePayment2/exchangeRate,
+                                    new Date(),new Date(),new Date(),exchangeRate,"C$",null,null);
                             AppExecutors.getInstance().diskIO().execute(new Runnable() {
                                 @Override
                                 public void run() {

@@ -77,6 +77,7 @@
         <activity
             android:name=".PayClientActivity"
             android:label="@string/new_payment"
+            android:theme="@style/AppTheme.NoActionBar"
             android:parentActivityName=".SearchActivity" />
         <activity
             android:name=".ModifyClientActivity"

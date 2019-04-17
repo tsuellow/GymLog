@@ -2,6 +2,7 @@ package com.example.android.gymlog.data;
 
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
+import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 
@@ -25,14 +26,39 @@ public class PaymentEntry {
     private Date timestamp;
     private int isValid=1;
     private int syncStatus=0;
+    private float exchangeRate;
+    private String currency;
+    private String comment;
+    private String extra;
 
-    public PaymentEntry(int clientId, String product, float amountUsd, Date paidFrom, Date paidUntil, Date timestamp) {
+    public PaymentEntry(int clientId, String product, float amountUsd, Date paidFrom, Date paidUntil, Date timestamp, float exchangeRate, String currency, String comment, String extra) {
         this.clientId = clientId;
         this.product = product;
         this.amountUsd = amountUsd;
         this.paidFrom = paidFrom;
         this.paidUntil = paidUntil;
         this.timestamp = timestamp;
+        this.exchangeRate = exchangeRate;
+        this.currency = currency;
+        this.comment = comment;
+        this.extra = extra;
+    }
+
+    @Ignore
+    public PaymentEntry(int id, int clientId, String product, float amountUsd, Date paidFrom, Date paidUntil, Date timestamp, int isValid, int syncStatus, float exchangeRate, String currency, String comment, String extra) {
+        this.id = id;
+        this.clientId = clientId;
+        this.product = product;
+        this.amountUsd = amountUsd;
+        this.paidFrom = paidFrom;
+        this.paidUntil = paidUntil;
+        this.timestamp = timestamp;
+        this.isValid = isValid;
+        this.syncStatus = syncStatus;
+        this.exchangeRate = exchangeRate;
+        this.currency = currency;
+        this.comment = comment;
+        this.extra = extra;
     }
 
     public int getId() {
@@ -105,5 +131,37 @@ public class PaymentEntry {
 
     public void setSyncStatus(int syncStatus) {
         this.syncStatus = syncStatus;
+    }
+
+    public float getExchangeRate() {
+        return exchangeRate;
+    }
+
+    public void setExchangeRate(float exchangeRate) {
+        this.exchangeRate = exchangeRate;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getExtra() {
+        return extra;
+    }
+
+    public void setExtra(String extra) {
+        this.extra = extra;
     }
 }

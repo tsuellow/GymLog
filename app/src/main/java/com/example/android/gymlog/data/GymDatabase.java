@@ -1,6 +1,7 @@
 package com.example.android.gymlog.data;
 
 
+import android.arch.persistence.db.SupportSQLiteDatabase;
 import android.arch.persistence.room.Database;
 import android.arch.persistence.room.Room;
 import android.arch.persistence.room.RoomDatabase;
@@ -9,7 +10,7 @@ import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 import android.util.Log;
 
-@Database(entities = {ClientEntry.class, PaymentEntry.class, VisitEntry.class},version = 7,exportSchema = false)
+@Database(entities = {ClientEntry.class, PaymentEntry.class, VisitEntry.class},version = 8,exportSchema = false)
 @TypeConverters(DateConverter.class)
 public abstract class GymDatabase extends RoomDatabase {
 
@@ -22,15 +23,19 @@ public abstract class GymDatabase extends RoomDatabase {
     private static GymDatabase sInstance;
 
 
-/*    static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+    static final Migration MIGRATION_7_8 = new Migration(7, 8) {
         @Override
         public void migrate(SupportSQLiteDatabase database) {
-            database.execSQL("ALTER TABLE visit ADD COLUMN syncStatus INTEGER");
-            database.execSQL("ALTER TABLE client ADD COLUMN syncStatus INTEGER");
-            database.execSQL("ALTER TABLE payment ADD COLUMN isValid INTEGER");
-            database.execSQL("ALTER TABLE payment ADD COLUMN syncStatus INTEGER");
+            database.execSQL("ALTER TABLE payment " +
+                    "ADD COLUMN exchangeRate REAL DEFAULT 32.5 NOT NULL");
+            database.execSQL("ALTER TABLE payment " +
+                    "ADD COLUMN currency TEXT DEFAULT 'USD'");
+            database.execSQL("ALTER TABLE payment " +
+                    "ADD COLUMN comment TEXT");
+            database.execSQL("ALTER TABLE payment " +
+                    "ADD COLUMN extra TEXT");
         }
-    };*/
+    };
 
     public static GymDatabase getInstance(Context context) {
         if (sInstance == null) {
@@ -39,8 +44,8 @@ public abstract class GymDatabase extends RoomDatabase {
                 sInstance = Room.databaseBuilder(context.getApplicationContext(),
                         GymDatabase.class, GymDatabase.DB_NAME)
                         //.allowMainThreadQueries()
-                        .fallbackToDestructiveMigration()
-                        //.addMigrations(MIGRATION_4_5)
+                        //.fallbackToDestructiveMigration()
+                        .addMigrations(MIGRATION_7_8)
                         .build();
             }
         }

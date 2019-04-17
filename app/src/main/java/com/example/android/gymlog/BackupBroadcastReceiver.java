@@ -1,14 +1,10 @@
 package com.example.android.gymlog;
 
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.preference.PreferenceManager;
-import android.widget.Toast;
 
 import com.example.android.gymlog.data.ClientEntry;
 import com.example.android.gymlog.data.GymDatabase;
@@ -38,12 +34,16 @@ public class BackupBroadcastReceiver extends BroadcastReceiver {
                         final List<PaymentEntry> payments=mDb.paymentDao().getPaymentToBeSynced();
                         final List<VisitEntry> visits=mDb.visitDao().getVisitToBeSynced();
 
-                        JSONObject jsonObject=dataBackup.createClientJson(clients,payments,visits);
+                        JSONObject jsonObject=dataBackup.createAllJson(clients,payments,visits);
                         dataBackup.syncAllAutomatic(jsonObject,context);
+                    }else{
+                        DataBackup.showNotification(context,context.getString(R.string.gymlog_backup_failed),context.getString(R.string.no_host_access));
                     }
                 }
             });
 
+        }else{
+            DataBackup.showNotification(context,context.getString(R.string.gymlog_backup_failed),context.getString(R.string.no_internet_at_planned_time));
         }
     }
 

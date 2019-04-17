@@ -34,6 +34,15 @@
     <string name="funfit">FunFit</string>
     <string name="external">External</string>
 
+    <string-array name="currency_array">
+        <item>@string/usd</item>
+        <item>@string/cordoba</item>
+    </string-array>
+    <string name="usd">USD</string>
+    <string name="cordoba">C$</string>
+
+
+
     <!--main activity strings-->
     <string name="title_activity_send_reminder" translatable="false">SendReminderActivity</string>
     <string name="welcome">Welcome</string>
@@ -128,7 +137,7 @@
     <string name="payment_information">Payment information</string>
     <string name="product">product</string>
     <string name="price_usd">price USD</string>
-    <string name="last_payment_on_record">last payment on record:</string>
+    <string name="last_payment_on_record">last payment:</string>
     <string name="input_has_to_be_numeric">Input has to be numeric</string>
     <string name="never">Never</string>
     <string name="attention">Attention!</string>
@@ -151,7 +160,7 @@
     <string name="backup_all_sum">Rewrites all data to the server</string>
     <string name="recover_all">Recover all</string>
     <string name="recover_all_sum">Retrieves all data from the server</string>
-    <string name="selected_time">Selected time fuck %s</string>
+    <string name="selected_time">Selected time  %s</string>
     <string name="gymlog_backup_successful">Gymlog backup successful</string>
     <string name="gymlog_backup_failed">Gymlog backup failed</string>
     <string name="failed_no_connection">No connection could be established</string>
@@ -174,6 +183,44 @@
     <string name="payment_settings">Payment Settings</string>
     <string name="preferred_currency">Preferred currency</string>
     <string name="secure_manual_search">Secure manual search</string>
+    <string name="currency">currency</string>
+    <string name="price">price</string>
+    <string name="comment">comment</string>
+    <string name="advanced_options">ADVANCED OPTIONS</string>
+    <string name="equivalent_to">equivalent to:</string>
+    <string name="no_host_access">No host access</string>
+    <string name="no_internet_at_planned_time">No internet connection was available at planed backup time</string>
+    <string name="from_time">from: ⏲</string>
+    <string name="to_time">to: ⏲</string>
+    <string name="exchange_rate_text">exchange rate:</string>
+    <string name="backup_set_for">Backup set for:</string>
+    <string name="each_full_hour">each full hour and</string>
+    <string name="minutes">minutes</string>
+    <string name="restriction_from">Time restriction from:</string>
+    <string name="restriction_to">Time restriction to:</string>
+    <string name="open">open</string>
+    <string name="open_folder">Open folder</string>
+    <string name="csv_created">CSV exports were created</string>
+    <string name="csv_created_msg">Press open to access the directory with the created files</string>
+    <string name="csv_error">An error occurred while creating the files</string>
+    <string name="no_app_available">No appropriate app available</string>
+    <string name="csv_export">CSV export</string>
+    <string name="from_edit">FROM date was edited,</string>
+    <string name="to_edit">TO date was edited,</string>
+    <string name="invalidated_at">Invalidated at:</string>
+    <string name="payment_id">Payment ID:</string>
+    <string name="paid_at">Paid at:</string>
+    <string name="amount">Amount:</string>
+    <string name="currency_cap">Currency:</string>
+    <string name="product_cap">Product:</string>
+    <string name="from_cap">From:</string>
+    <string name="to_cap">To:</string>
+    <string name="comment_cap">Comment:</string>
+    <string name="payment_info">Payment info</string>
+    <string name="records_imported">records were successfully imported from the server</string>
+    <string name="data_restore_finished">Data restore finished</string>
+    <string name="data_restore_failed">Data restore failed</string>
+    <string name="backup_time_toast">Automatic backup is set</string>
 
 
 </resources>

@@ -10,12 +10,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.example.android.gymlog.data.DateConverter;
 import com.example.android.gymlog.data.GymDatabase;
 import com.example.android.gymlog.data.PaymentEntry;
+import com.example.android.gymlog.utils.DateMethods;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class CpPaymentsAdapter extends RecyclerView.Adapter<CpPaymentsAdapter.ViewHolder> {
@@ -25,10 +29,12 @@ public class CpPaymentsAdapter extends RecyclerView.Adapter<CpPaymentsAdapter.Vi
     public class ViewHolder extends RecyclerView.ViewHolder{
         private TextView mFrom, mUntil, mProduct, mAmount;
         private Button mDelete;
+        private LinearLayout mBackground;
 
         public ViewHolder(View itemView){
             super(itemView);
 
+            mBackground= (LinearLayout) itemView.findViewById(R.id.ll_background_cp);
             mFrom= (TextView) itemView.findViewById(R.id.tv_from_cp_pay);
             mUntil= (TextView) itemView.findViewById(R.id.tv_to_cp_pay);
             mProduct = (TextView) itemView.findViewById(R.id.tv_product_cp_pay);
@@ -79,8 +85,38 @@ public class CpPaymentsAdapter extends RecyclerView.Adapter<CpPaymentsAdapter.Vi
         viewHolder.mFrom.setText(from);
         viewHolder.mUntil.setText(until);
         viewHolder.mProduct.setText(payment.getProduct());
-        final String amount="USD "+Math.round(payment.getAmountUsd());
+        float cordobas=payment.getAmountUsd()*payment.getExchangeRate();
+        final String amount="USD "+Math.round(payment.getAmountUsd())+" /C$ "+Math.round(cordobas);
         viewHolder.mAmount.setText(amount);
+
+        final String dialogText=mContext.getString(R.string.payment_id)+" "+payment.getId()+ " \n"+
+                mContext.getString(R.string.paid_at)+" "+DateConverter.getDateString(payment.getTimestamp()).substring(0,16)+ " \n"+
+                mContext.getString(R.string.amount)+" "+amount+" \n"+
+                mContext.getString(R.string.currency_cap)+" "+payment.getCurrency()+" \n"+
+                mContext.getString(R.string.product_cap)+" "+payment.getProduct()+" \n"+
+                mContext.getString(R.string.from_cap)+" "+DateConverter.getDateString(payment.getPaidFrom()).substring(0,16)+ " \n"+
+                mContext.getString(R.string.to_cap)+" "+DateConverter.getDateString(payment.getPaidUntil()).substring(0,16)+ " \n"+
+                mContext.getString(R.string.comment_cap)+" "+payment.getComment();
+
+
+        viewHolder.mBackground.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                AlertDialog.Builder builder =
+                        new AlertDialog.Builder(mContext);
+                final AlertDialog alertDialog=builder.create();
+                alertDialog.setTitle(mContext.getString(R.string.payment_info));
+                alertDialog.setMessage(dialogText);
+                alertDialog.setButton(android.app.AlertDialog.BUTTON_NEGATIVE, mContext.getString(R.string.close), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        alertDialog.dismiss();
+                    }
+                });
+                alertDialog.show();
+
+            }
+        });
 
 
         viewHolder.mDelete.setOnClickListener(new View.OnClickListener() {
@@ -94,6 +130,10 @@ public class CpPaymentsAdapter extends RecyclerView.Adapter<CpPaymentsAdapter.Vi
                         " "+from+" "+mContext.getString(R.string.until)+" "+until+" "+mContext.getString(R.string.question_marc));
                 alertDialog.setButton(android.app.AlertDialog.BUTTON_POSITIVE, mContext.getString(R.string.yes), new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
+                        String extra=payment.getExtra();
+                        if(extra==null){extra="";}
+                        extra=mContext.getString(R.string.invalidated_at)+" "+ DateConverter.getDateString(new Date())+", "+ extra;
+                        payment.setExtra(extra);
                         invalidatePayment(payment);
                         alertDialog.dismiss();
                     }

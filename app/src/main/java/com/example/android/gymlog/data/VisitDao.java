@@ -35,6 +35,9 @@ public interface VisitDao {
     @Update(onConflict = OnConflictStrategy.REPLACE)
     void updateVisit(VisitEntry visitEntry);
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void restoreVisit(VisitEntry visitEntry);
+
     @Insert
     void insertVisit(VisitEntry visitEntry);
 

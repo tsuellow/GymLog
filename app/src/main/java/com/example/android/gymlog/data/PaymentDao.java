@@ -18,7 +18,8 @@ public interface PaymentDao {
             "paidUntil=(SELECT MAX(paidUntil) FROM payment WHERE clientId=:clientId AND isValid=1)")
     LiveData<PaymentEntry> getLastPaymentByClient(int clientId);
 
-    @Query("SELECT * FROM payment WHERE clientId=:clientId AND paidFrom<=:date AND paidUntil>=:date " +
+    @Query("SELECT * FROM payment WHERE clientId=:clientId AND substr(paidFrom,1,10)<=substr(:date,1,10) AND substr(paidUntil,1,10)>=substr(:date,1,10) " +
+            "AND ((SUBSTR(paidFrom,12,5)<=SUBSTR(:date,12,5) AND SUBSTR(paidUntil,12,5)>=SUBSTR(:date,12,5)) OR SUBSTR(paidUntil,12,5)='00:00')"+
             "AND isValid=1 ORDER BY paidUntil DESC LIMIT 1")
     LiveData<PaymentEntry> getCurrentPaymentByClient(int clientId, Date date);
 
@@ -39,6 +40,9 @@ public interface PaymentDao {
 
     @Delete
     void deletePayment(PaymentEntry paymentEntry);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void restorePayment(PaymentEntry paymentEntry);
 
     @Insert
     void insertPayment(PaymentEntry paymentEntry);

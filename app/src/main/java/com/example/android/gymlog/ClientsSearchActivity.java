@@ -159,7 +159,7 @@ public class ClientsSearchActivity extends AppCompatActivity implements ClientsS
             }
         });
 
-        final LiveData<PaymentEntry> currentPayment = mDb.paymentDao().getCurrentPaymentByClient(clientId,DateMethods.getRoundDate(new Date()));
+        final LiveData<PaymentEntry> currentPayment = mDb.paymentDao().getCurrentPaymentByClient(clientId,new Date());
         currentPayment.observe(this, new Observer<PaymentEntry>() {
             @Override
             public void onChanged(@Nullable PaymentEntry paymentEntry) {
